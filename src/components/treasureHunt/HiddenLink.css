@@ -1,0 +1,394 @@
+/* Hidden Link Styles */
+.hidden-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer !important;
+  position: relative;
+  display: inline-block;
+  transition: all 0.3s ease;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 3px;
+  z-index: 1;
+  outline: none;
+}
+
+.hidden-link:focus-visible {
+  box-shadow: 0 0 0 2px rgba(30, 178, 166, 0.5);
+  outline: none;
+}
+
+/* Text variant */
+.hidden-link-text {
+  color: inherit;
+  position: relative;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.hidden-link-text.hovered {
+  color: #1eb2a6;
+  text-decoration: underline;
+  transform: scale(1.05);
+}
+
+.hidden-link-text.clicked {
+  color: #e74c3c;
+}
+
+/* Icon variant */
+.hidden-link-icon {
+  font-size: 1.2em;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.hidden-link-icon.hovered {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.hidden-link-icon.clicked {
+  opacity: 0.5;
+}
+
+/* Image variant */
+.hidden-link-image {
+  transition: all 0.3s ease;
+  max-width: 100%;
+  height: auto;
+  filter: grayscale(50%);
+  display: block;
+}
+
+.hidden-link-image.hovered {
+  filter: grayscale(0%);
+  transform: scale(1.05);
+}
+
+.hidden-link-image.clicked {
+  filter: brightness(0.9);
+}
+
+/* Logo variant */
+.hidden-link-logo {
+  transition: all 0.3s ease;
+  opacity: 0.8;
+  display: inline-block;
+}
+
+.hidden-link-logo.hovered {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.hidden-link-logo.clicked {
+  opacity: 0.7;
+}
+
+.hidden-link-logo img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Button variant */
+.hidden-link-button {
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 8px 15px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.hidden-link-button.hovered {
+  background-color: rgba(30, 178, 166, 0.1);
+  border-color: rgba(30, 178, 166, 0.3);
+}
+
+.hidden-link-button.clicked {
+  background-color: #dee2e6;
+  transform: translateY(0);
+}
+
+/* Hidden variant */
+.hidden-link-invisible {
+  opacity: 0.2;
+  transition: opacity 0.3s ease;
+  display: inline-block;
+  min-width: 10px;
+  min-height: 10px;
+}
+
+.hidden-link-invisible.hovered {
+  opacity: 0.8;
+}
+
+/* Real link subtle indicators */
+.real-link .hidden-link-text:after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: rgba(30, 178, 166, 0.2);
+  transform: scaleX(0);
+  transition: transform 0.3s;
+}
+
+.real-link:hover .hidden-link-text:after {
+  transform: scaleX(1);
+}
+
+.real-link .hidden-link-icon {
+  position: relative;
+}
+
+.real-link .hidden-link-icon:after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 25%;
+  width: 50%;
+  height: 2px;
+  background-color: rgba(30, 178, 166, 0.3);
+  transform: scaleX(0);
+  transition: transform 0.3s;
+}
+
+.real-link:hover .hidden-link-icon:after {
+  transform: scaleX(1);
+}
+
+.real-link .hidden-link-image {
+  border: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.real-link:hover .hidden-link-image {
+  border-color: rgba(30, 178, 166, 0.3);
+}
+
+.real-link .hidden-link-logo {
+  position: relative;
+}
+
+.real-link .hidden-link-logo:after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 25%;
+  width: 50%;
+  height: 2px;
+  background-color: rgba(30, 178, 166, 0.3);
+  transform: scaleX(0);
+  transition: transform 0.3s;
+}
+
+.real-link:hover .hidden-link-logo:after {
+  transform: scaleX(1);
+}
+
+.real-link .hidden-link-button {
+  border: 1px solid #ddd;
+}
+
+.real-link:hover .hidden-link-button {
+  border-color: rgba(30, 178, 166, 0.5);
+}
+
+/* MEDIUM DIFFICULTY: Add subtle visual cues for real links */
+.hidden-link[data-is-real="true"] .hidden-link-text {
+  font-weight: 500;
+}
+
+.hidden-link[data-is-real="true"] .hidden-link-text:hover {
+  color: #1eb2a6;
+  text-shadow: 0 0 1px rgba(30, 178, 166, 0.3);
+}
+
+.hidden-link[data-is-real="true"] .hidden-link-icon {
+  opacity: 0.7;
+}
+
+.hidden-link[data-is-real="true"] .hidden-link-invisible:hover {
+  background-color: rgba(30, 178, 166, 0.15);
+}
+
+/* Special positioning classes */
+.hidden-link-top-right {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.hidden-link-bottom-left {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+.hidden-link-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hidden-link-icon {
+    font-size: 14px;
+  }
+  
+  .hidden-link {
+    padding: 4px 8px;
+    margin: -4px -8px;
+  }
+}
+
+/* Active and hover states */
+.hidden-link:hover,
+.hidden-link.hovered {
+  cursor: pointer !important;
+  z-index: 10;
+}
+
+/* Pulse animation */
+.hidden-link.pulse {
+  animation: linkPulse 2s ease-in-out;
+}
+
+@keyframes linkPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(30, 178, 166, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(30, 178, 166, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(30, 178, 166, 0);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) {
+  .hidden-link {
+    padding: 6px 10px;
+    margin: -6px -10px;
+  }
+  
+  .hidden-link-invisible {
+    opacity: 0.3;
+    min-width: 20px;
+    min-height: 20px;
+  }
+}
+
+/* Active state for better feedback */
+.hidden-link:active {
+  transform: scale(0.98);
+}
+
+/* Ensure tooltip doesn't interfere with clicks */
+.link-tooltip, .link-indicator {
+  pointer-events: none;
+}
+
+.hidden-link-text::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: #1eb2a6;
+  transition: width 0.3s ease;
+}
+
+.hidden-link-text.hovered::after {
+  width: 100%;
+}
+
+.link-indicator {
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #1eb2a6;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.hidden-link:hover .link-indicator,
+.hidden-link.hovered .link-indicator {
+  transform: scaleX(1);
+}
+
+.link-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+  z-index: 1000;
+}
+
+.hidden-link:hover .link-tooltip,
+.hidden-link.hovered .link-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.link-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* Pulse animation for links */
+.pulse {
+  animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+  0% {
+    box-shadow: 0 0 0 0 rgba(30, 178, 166, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(30, 178, 166, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(30, 178, 166, 0);
+  }
+}
+
+/* Styles for real vs decoy links (only visible in debug mode) */
+.real-link.debug-visible {
+  border: 2px solid #28a745 !important;
+}
+
+.decoy-link.debug-visible {
+  border: 2px solid #dc3545 !important;
+} 

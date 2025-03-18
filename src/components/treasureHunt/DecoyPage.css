@@ -1,0 +1,124 @@
+.decoy-page {
+  padding: 50px 0;
+  min-height: 70vh;
+  background-color: #f5f7fa;
+}
+
+.decoy-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.decoy-content h1 {
+  color: #1eb2a6;
+  margin-bottom: 30px;
+}
+
+.decoy-message {
+  margin: 30px 0;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 5px solid #1eb2a6;
+}
+
+.player-greeting {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.decoy-text {
+  font-size: 20px;
+  color: #555;
+  font-style: italic;
+  margin: 20px 0;
+}
+
+.clue-text, .hint-text {
+  font-size: 20px;
+  color: #1eb2a6;
+  font-weight: 500;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: rgba(30, 178, 166, 0.1);
+  border-radius: 8px;
+}
+
+.hint-text {
+  color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.1);
+}
+
+.decoy-navigation {
+  margin-top: 30px;
+}
+
+.back-button {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #1eb2a6;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  transition: background-color 0.3s;
+}
+
+.back-button:hover {
+  background-color: #189a8f;
+}
+
+.decoy-links {
+  margin-top: 20px;
+}
+
+.decoy-links p {
+  margin-bottom: 10px;
+  color: #666;
+}
+
+.link-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.link-grid a {
+  padding: 8px 15px;
+  background-color: #f8f9fa;
+  color: #333;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: all 0.3s;
+}
+
+.link-grid a:hover {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+}
+
+/* Add some random elements to make each decoy page look slightly different */
+.decoy-page:nth-child(odd) .decoy-content {
+  border-top: 3px solid #1eb2a6;
+}
+
+.decoy-page:nth-child(even) .decoy-content {
+  border-bottom: 3px solid #1eb2a6;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .decoy-content {
+    padding: 20px;
+  }
+  
+  .decoy-text, .clue-text, .hint-text {
+    font-size: 18px;
+  }
+} 

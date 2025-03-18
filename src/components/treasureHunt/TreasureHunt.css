@@ -1,0 +1,934 @@
+.treasure-hunt {
+  padding: 50px 0;
+  min-height: 80vh;
+  position: relative;
+}
+
+.hunt-content {
+  position: relative;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.hunt-content h1 {
+  color: #1eb2a6;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.hunt-content p {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* MEDIUM DIFFICULTY: Styling for difficulty info and hints */
+.difficulty-info {
+  background-color: #e6f7f5;
+  border: 1px solid #1eb2a6;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.difficulty-info p {
+  text-align: left;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.difficulty-info p:last-child {
+  margin-bottom: 0;
+}
+
+.difficulty-info p strong {
+  color: #1eb2a6;
+}
+
+.dev-tools-hint {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.dev-tools-hint p {
+  color: #856404;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Username Form Styles */
+.username-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.username-form {
+  max-width: 500px;
+  width: 100%;
+  margin: 30px auto;
+  text-align: center;
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.username-form h2 {
+  color: #1eb2a6;
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.username-form h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.form-description {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.error-message {
+  background-color: #ffdddd;
+  border: 1px solid #ff9999;
+  padding: 10px;
+  margin: 15px 0;
+  border-radius: 5px;
+  color: #cc0000;
+  font-size: 14px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.username-form input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.username-form input:focus {
+  outline: none;
+  border-color: #1eb2a6;
+  box-shadow: 0 0 5px rgba(30, 178, 166, 0.3);
+}
+
+.start-btn {
+  padding: 12px 30px;
+  background-color: #1eb2a6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.start-btn:hover {
+  background-color: #0c8c82;
+  transform: translateY(-2px);
+}
+
+.start-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.penalty-box {
+  background-color: #ffdddd;
+  border: 1px solid #ff9999;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.fake-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.fake-btn {
+  padding: 10px 20px;
+  background-color: #1eb2a6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fake-btn:hover {
+  background-color: #0c8c82;
+  transform: translateY(-2px);
+}
+
+.fake-links {
+  display: flex;
+  justify-content: space-around;
+  margin: 30px 0;
+}
+
+.fake-links a {
+  color: #1eb2a6;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hidden-clue {
+  font-style: italic;
+  color: #999;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.hidden-link {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.misleading-content {
+  margin: 30px 0;
+  padding: 20px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+}
+
+.misleading-content h3 {
+  color: #1eb2a6;
+  margin-bottom: 15px;
+}
+
+.misleading-content ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.misleading-content li {
+  margin-bottom: 10px;
+}
+
+.distraction-images {
+  display: flex;
+  justify-content: space-between;
+  margin: 30px 0;
+}
+
+.image-box {
+  width: 150px;
+  height: 150px;
+  background-color: #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-box:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* CSS trick to hide a clue */
+.hunt-content::after {
+  content: "Find me at /round2";
+  display: none;
+}
+
+.game-instructions {
+  margin-top: 30px;
+  text-align: left;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+}
+
+.game-instructions h4 {
+  color: #1eb2a6;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.game-instructions ol {
+  padding-left: 20px;
+}
+
+.game-instructions li {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+/* Name Modal Popup Styles */
+.name-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.name-modal {
+  max-width: 500px;
+  width: 90%;
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.name-modal h2 {
+  color: #1eb2a6;
+  margin-bottom: 10px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.name-modal h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 20px;
+  text-align: center;
+}
+
+.name-modal .form-description {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.name-modal .input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.name-modal .input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.name-modal input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.name-modal input:focus {
+  outline: none;
+  border-color: #1eb2a6;
+  box-shadow: 0 0 5px rgba(30, 178, 166, 0.3);
+}
+
+.name-modal .start-btn {
+  padding: 12px 30px;
+  background-color: #1eb2a6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.name-modal .start-btn:hover {
+  background-color: #0c8c82;
+  transform: translateY(-2px);
+}
+
+.name-modal .start-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.name-modal .game-instructions {
+  margin-top: 30px;
+  text-align: left;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+}
+
+.name-modal .game-instructions h4 {
+  color: #1eb2a6;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.name-modal .game-instructions ol {
+  padding-left: 20px;
+}
+
+.name-modal .game-instructions li {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+/* Add these styles at the top of the file */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-container h2 {
+  color: #1eb2a6;
+  margin-bottom: 1rem;
+}
+
+.error-container {
+  background-color: #ffebee;
+  border-radius: 8px;
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border-left: 5px solid #d32f2f;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.error-container h2 {
+  color: #d32f2f;
+  margin-bottom: 1rem;
+  font-size: 24px;
+}
+
+.error-container p {
+  color: #555;
+  font-size: 18px;
+  margin-top: 1rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add styles for the waiting state */
+.waiting-state {
+  text-align: center;
+  padding: 50px 0;
+}
+
+.waiting-message {
+  background-color: #f8f9fa;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+  margin-top: 30px;
+}
+
+.waiting-message h2 {
+  color: #1eb2a6;
+  margin-bottom: 15px;
+}
+
+.waiting-animation {
+  display: flex;
+  justify-content: center;
+  margin: 30px 0;
+}
+
+.dot {
+  width: 15px;
+  height: 15px;
+  background-color: #1eb2a6;
+  border-radius: 50%;
+  margin: 0 8px;
+  animation: bounce 1.5s infinite ease-in-out;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.refresh-note {
+  font-style: italic;
+  color: #6c757d;
+  margin-top: 20px;
+}
+
+/* Educational content styles */
+.educational-content {
+  margin: 30px 0;
+}
+
+.content-section {
+  background-color: #fff;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.content-section:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.content-section h3 {
+  color: #1eb2a6;
+  margin-bottom: 15px;
+  font-size: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Hidden elements container styles */
+.hidden-elements-container {
+  margin: 40px 0;
+  background-color: #f9f9f9;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.hidden-elements-container h3 {
+  color: #1eb2a6;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 24px;
+}
+
+.hidden-elements {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+.hidden-elements h4 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 18px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+/* Icons section */
+.icons-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.icon-group {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.treasure-hunt-icon {
+  font-size: 28px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.treasure-hunt-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Images section */
+.images-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.image-group {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.treasure-hunt-image {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.treasure-hunt-image:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Buttons section */
+.buttons-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.treasure-hunt-button {
+  width: 100%;
+  max-width: 250px;
+}
+
+/* Logo section */
+.logo-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.logo-group {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 25px;
+}
+
+.treasure-hunt-logo {
+  max-width: 150px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.treasure-hunt-logo:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.treasure-hunt-logo img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Hide distractions */
+.distraction-images,
+.fake-buttons,
+.fake-links {
+  display: none;
+}
+
+/* Competition info styles */
+.competition-info {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.competition-notice {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #856404;
+}
+
+.competition-icon {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.competition-tip {
+  font-style: italic;
+  color: #856404;
+  margin-top: 10px;
+}
+
+/* Player count information */
+.player-count-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f0f8ff;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+}
+
+.player-count-info h4 {
+  margin-top: 0;
+  color: #2980b9;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.player-count-info p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #444;
+}
+
+.player-count-info p:last-child {
+  font-weight: bold;
+  margin-top: 10px;
+  color: #e74c3c;
+}
+
+/* Hint message styles */
+.treasure-hunt-hint {
+  background-color: #fff3cd;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  display: flex;
+  align-items: flex-start;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #ffc107;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hint-icon {
+  font-size: 24px;
+  margin-right: 15px;
+  padding-top: 5px;
+}
+
+.hint-content {
+  flex: 1;
+}
+
+.hint-content h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #856404;
+  font-size: 18px;
+}
+
+.hint-content p {
+  margin-bottom: 15px;
+  color: #6c5328;
+  line-height: 1.5;
+}
+
+.hint-progress {
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.hint-progress-label {
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #6c5328;
+}
+
+.hint-progress-bar {
+  height: 10px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.hint-progress-fill {
+  height: 100%;
+  background-color: #28a745;
+  border-radius: 5px;
+  transition: width 0.5s ease;
+}
+
+.hint-progress-status {
+  font-size: 14px;
+  color: #6c5328;
+  font-style: italic;
+}
+
+/* Debug panel styles */
+.debug-panel {
+  background-color: #f8f9fa;
+  border: 1px dashed #dc3545;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  font-family: monospace;
+}
+
+.debug-panel h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #dc3545;
+  font-size: 16px;
+}
+
+.debug-panel p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.debug-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.debug-button:hover {
+  background-color: #c82333;
+}
+
+/* Debug highlight for links */
+.debug-highlight {
+  outline: 2px dashed #dc3545 !important;
+  outline-offset: 2px !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+/* Enhanced styles for hidden links */
+a[id^="link-"] {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+a[id^="link-"]:hover {
+  background-color: rgba(30, 178, 166, 0.1);
+  outline: 1px dashed #1eb2a6;
+  outline-offset: 2px;
+}
+
+a[id^="link-"]::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 4px;
+  background-color: rgba(30, 178, 166, 0.05);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+a[id^="link-"]:hover::before {
+  opacity: 1;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .treasure-hunt-hint {
+    flex-direction: column;
+  }
+  
+  .hint-icon {
+    margin-right: 0;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+} 
