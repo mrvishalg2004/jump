@@ -75,6 +75,8 @@ const TreasureHunt = () => {
   const [socket, setSocket] = useState(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [clickCount, setClickCount] = useState(0);
+  const [inputLink, setInputLink] = useState('');
+  const [token, setToken] = useState('');
   const history = useHistory();
 
   // Initialize player data and check game state on component mount
@@ -272,6 +274,32 @@ const TreasureHunt = () => {
       } else {
         alert('Error submitting link: ' + (error.response?.data?.message || error.message));
       }
+    }
+  };
+
+  const handleLinkSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/validate-link`, { link: inputLink });
+      if (response.data.success) {
+        setToken(response.data.token);
+        alert('Correct link! Use this token in the URL: ' + response.data.token);
+        // Notify admin panel
+        if (socket) {
+          socket.emit('playerUpdate', {
+            playerId,
+            username,
+            action: 'found_link',
+            timestamp: new Date().toISOString(),
+            message: `${username} found a correct link`
+          });
+        }
+      } else {
+        alert('Incorrect link, try again!');
+      }
+    } catch (error) {
+      console.error('Error validating link:', error);
+      alert('Error validating link, please try again later.');
     }
   };
 
@@ -571,6 +599,17 @@ const TreasureHunt = () => {
               <p>Find the real link before others to secure your spot!</p>
             </div>
           </div>
+          <form onSubmit={handleLinkSubmit}>
+            <input
+              type="text"
+              value={inputLink}
+              onChange={(e) => setInputLink(e.target.value)}
+              placeholder="Paste your found link here"
+              required
+            />
+            <button type="submit">Submit Link</button>
+          </form>
+          {token && <p>Your token: {token}</p>}
         </div>
       </div>
       

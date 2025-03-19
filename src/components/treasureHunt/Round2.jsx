@@ -219,6 +219,16 @@ const Round2 = () => {
             </div>
           )}
           
+          {demoCompleted && (
+            <div className="proceed-section">
+              <h3>Congratulations on completing the demo!</h3>
+              <p>Click the button below to proceed to the next round:</p>
+              <a href="http://127.0.0.1:49534" className="proceed-button">
+                Proceed to Round 2
+              </a>
+            </div>
+          )}
+          
           <div className="round2-instructions">
             <h3>What's Next?</h3>
             <p>

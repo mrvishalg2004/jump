@@ -1076,25 +1076,39 @@ tr.qualified-for-round-2:hover {
 }
 
 .quick-access-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
+  padding: 10px 15px;
   background-color: #1eb2a6;
   color: white;
-  padding: 10px 15px;
-  border-radius: 5px;
   text-decoration: none;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+  border-radius: 5px;
+  margin-top: 10px;
+  transition: all 0.2s ease;
 }
 
 .quick-access-btn:hover {
   background-color: #189a8f;
+  transform: translateY(-2px);
 }
 
 .btn-icon {
   margin-right: 8px;
-  font-size: 18px;
+}
+
+/* Logout button styling */
+.logout-btn {
+  background-color: #dc3545;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: inherit;
+  width: 100%;
+  text-align: center;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
 }
 
 /* Mobile adjustments for quick access panel */
@@ -1116,4 +1130,173 @@ tr.qualified-for-round-2:hover {
 /* Make the qualified players section more prominent */
 .qualified-players-container {
   margin-top: 20px;
+}
+
+/* Manual qualification button */
+.manual-actions {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.qualify-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qualify-btn:hover {
+  background-color: #218838;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.qualify-btn:active {
+  transform: translateY(1px);
+}
+
+.qualify-btn:before {
+  content: "🏆";
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+/* Disqualify button */
+.disqualify-actions {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.disqualify-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.disqualify-btn:hover {
+  background-color: #c82333;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.disqualify-btn:active {
+  transform: translateY(1px);
+}
+
+.disqualify-btn:before {
+  content: "⛔";
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+/* Add styles for the manual qualification badge */
+.manual-qualification-badge {
+  display: inline-block;
+  margin-left: 8px;
+  background-color: #f39c12;
+  color: white;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.manual-time {
+  color: #f39c12;
+  font-style: italic;
+  font-family: monospace;
+}
+
+/* Update the qualified player row to handle manually qualified players */
+.qualified-player-row.manual-qualification {
+  background-color: rgba(243, 156, 18, 0.1);
+}
+
+.qualified-player-row.manual-qualification:hover {
+  background-color: rgba(243, 156, 18, 0.2);
+}
+
+/* Server Connection Status */
+.server-connection-status {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.server-connection-status h3 {
+  margin-top: 0;
+  color: #343a40;
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.server-connection-status p {
+  margin-bottom: 10px;
+  font-family: monospace;
+  background-color: #edf2ff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #4263eb;
+  word-break: break-all;
+}
+
+.port-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.port-actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.sync-port-btn {
+  background-color: #4263eb;
+  color: white;
+}
+
+.sync-port-btn:hover {
+  background-color: #3b5bdb;
+}
+
+.manual-port-btn {
+  background-color: #12b886;
+  color: white;
+}
+
+.manual-port-btn:hover {
+  background-color: #0ca678;
+}
+
+.port-actions .btn-icon {
+  margin-right: 5px;
 } 

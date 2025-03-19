@@ -2,13 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 import './Admin.css';
-import LinkTracker from './LinkTracker';
 import { generateHash, getLinkLocations, getDecoyDestinations } from '../../utils/linkHider';
 
 // Function to get the API base URL
 const getApiBaseUrl = () => {
-  // Default to port 5005 if we can't read the file
-  let port = 5005;
+  // Default to port 5000 if we can't read the file
+  let port = 5000;
   
   try {
     // Try to read the port from localStorage (set by other components)
@@ -16,6 +15,46 @@ const getApiBaseUrl = () => {
     if (savedPort) {
       port = savedPort;
     }
+    
+    // Check if we should sync with the current-port.txt file
+    const currentPort = localStorage.getItem('lastCheckedPort');
+    const lastCheck = localStorage.getItem('lastPortCheck');
+    const now = Date.now();
+    
+    // Only check for port updates every 15 seconds to avoid excessive polling
+    if (!currentPort || !lastCheck || (now - parseInt(lastCheck)) > 15000) {
+      console.log('Checking for updated port from server...');
+      
+      // Try to get the port from current-port.txt via an API call
+      fetch('/current-port.txt')
+        .then(response => {
+          if (response.ok) {
+            return response.text();
+          }
+          throw new Error('Could not read current-port.txt');
+        })
+        .then(serverPort => {
+          if (serverPort && !isNaN(parseInt(serverPort.trim()))) {
+            const newPort = serverPort.trim();
+            console.log(`Found new port in current-port.txt: ${newPort}`);
+            
+            // Update localStorage
+            localStorage.setItem('apiPort', newPort);
+            localStorage.setItem('lastCheckedPort', newPort);
+            localStorage.setItem('lastPortCheck', now.toString());
+            
+            // Force refresh if port changed
+            if (port !== newPort) {
+              console.log(`Port changed from ${port} to ${newPort}, refreshing...`);
+              window.location.reload();
+            }
+          }
+        })
+        .catch(err => {
+          console.warn('Error checking port file:', err);
+        });
+    }
+    
     console.log(`Admin component using API port: ${port}`);
   } catch (error) {
     console.error('Error getting API port:', error);
@@ -25,6 +64,7 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
+console.log('==== API_BASE_URL ====', API_BASE_URL);
 
 const Admin = () => {
   const [players, setPlayers] = useState([]);
@@ -43,7 +83,88 @@ const Admin = () => {
   const [copySuccess, setCopySuccess] = useState('');
   const [playerRealLink, setPlayerRealLink] = useState(null);
   const [originalLinkPosition, setOriginalLinkPosition] = useState(null);
-  
+  const [qualifiedPlayers, setQualifiedPlayers] = useState([]);
+
+  // Define fetchPlayers before any useEffect hooks that use it
+  const fetchPlayers = useCallback(async () => {
+    try {
+      setError(''); // Clear any previous errors
+      
+      console.log(`Fetching players from: ${API_BASE_URL}/api/players/admin/players`);
+      
+      const response = await axios.get(`${API_BASE_URL}/api/players/admin/players`, {
+        timeout: 8000 // Increase timeout for more reliable connection
+      });
+      
+      if (response.data.success) {
+        const allPlayers = response.data.players || [];
+        console.log(`Received ${allPlayers.length} players from server`);
+        
+        // Sort players by timestamp (newest first)
+        const sortedPlayers = [...allPlayers].sort((a, b) => {
+          return new Date(b.timestamp) - new Date(a.timestamp);
+        });
+        
+        setPlayers(sortedPlayers);
+        
+        // Filter qualified players
+        const qualified = sortedPlayers.filter(player => player.status === 'Qualified for Round 2');
+        console.log('Qualified players:', qualified.length);
+        setQualifiedPlayers(qualified);
+        
+        // Update game settings if they changed
+        if (response.data.gameSettings) {
+          setGameSettings(response.data.gameSettings);
+        }
+        
+        setError('');
+        console.log(`Successfully fetched ${allPlayers.length} players (${qualified.length} qualified)`);
+      } else {
+        setError('Failed to fetch players data: ' + response.data.message);
+        console.error('API returned error:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      if (error.code === 'ECONNABORTED') {
+        setError('Request timed out. Please check your connection and try again.');
+      } else if (!error.response) {
+        setError(`Network error. Please check that the backend server is running on port ${localStorage.getItem('apiPort') || '5000'}.`);
+      } else {
+        setError('Failed to fetch players data: ' + (error.response?.data?.message || error.message));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE_URL]);
+
+  // Check localStorage for authentication on component mount
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+    if (isAuthenticated) {
+      setAuthenticated(true);
+    }
+    
+    // Check what port is being used
+    console.log('Current API port in localStorage:', localStorage.getItem('apiPort') || 'not set');
+    console.log('Using API_BASE_URL:', API_BASE_URL);
+  }, []);
+
+  // Add useEffect to fetch players on mount and when authenticated and to refresh periodically
+  useEffect(() => {
+    if (authenticated) {
+      setLoading(true);
+      fetchPlayers();
+      
+      // Set up an interval to refresh the data every 20 seconds
+      const intervalId = setInterval(() => {
+        console.log('Periodic refresh of player list');
+        fetchPlayers();
+      }, 20000);
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [authenticated, fetchPlayers]);
+
   // Connect to socket.io server
   useEffect(() => {
     if (authenticated) {
@@ -60,6 +181,39 @@ const Admin = () => {
       
       // Listen for player updates
       newSocket.on('playerUpdate', (data) => {
+        console.log('Received player update:', data);
+        
+        if (data.type === 'qualification') {
+          // Handle qualification update specifically to update UI immediately
+          const updatedPlayer = data.player;
+          
+          // Update the qualified players list without waiting for fetchPlayers
+          setQualifiedPlayers(prevQualified => {
+            // Check if player is already in the list
+            const existingIndex = prevQualified.findIndex(p => p.playerId === updatedPlayer.playerId);
+            if (existingIndex >= 0) {
+              // Update existing player
+              const updatedList = [...prevQualified];
+              updatedList[existingIndex] = { ...updatedList[existingIndex], ...updatedPlayer };
+              return updatedList;
+            } else {
+              // Add new qualified player
+              return [...prevQualified, updatedPlayer];
+            }
+          });
+          
+          // Also update in the main players list
+          setPlayers(prevPlayers => {
+            return prevPlayers.map(p => {
+              if (p.playerId === updatedPlayer.playerId) {
+                return { ...p, ...updatedPlayer };
+              }
+              return p;
+            });
+          });
+        }
+        
+        // Fetch all players to ensure data consistency
         fetchPlayers();
       });
 
@@ -81,43 +235,70 @@ const Admin = () => {
         newSocket.disconnect();
       };
     }
-  }, [authenticated]);
+  }, [authenticated, fetchPlayers]);
 
-  // Fetch players data
-  const fetchPlayers = async () => {
-    try {
-      setLoading(true);
-      setError(''); // Clear any previous errors
+  // Listen for socket events to update player list in real-time
+  useEffect(() => {
+    if (socket) {
+      const handlePlayerUpdate = (data) => {
+        console.log('Received player update via socket:', data);
+        
+        // If we have a player update with qualification or registration, handle it specially
+        if (data.type === 'qualification' || data.type === 'registration') {
+          console.log('Processing player update of type:', data.type);
+          
+          // Update specific player in the lists
+          setPlayers(prevPlayers => {
+            const updated = [...prevPlayers];
+            const playerIndex = updated.findIndex(p => p.playerId === data.player.playerId);
+            
+            if (playerIndex >= 0) {
+              // Update existing player
+              console.log('Updating existing player in list:', data.player.username);
+              updated[playerIndex] = {...updated[playerIndex], ...data.player};
+            } else {
+              // Add new player to the beginning of the list
+              console.log('Adding new player to list:', data.player.username);
+              updated.unshift(data.player);
+            }
+            
+            return updated;
+          });
+          
+          // If it's a qualification, also update the qualified players list
+          if (data.type === 'qualification') {
+            setQualifiedPlayers(prevQualified => {
+              const exists = prevQualified.some(p => p.playerId === data.player.playerId);
+              if (exists) {
+                return prevQualified.map(p => 
+                  p.playerId === data.player.playerId ? {...p, ...data.player} : p
+                );
+              }
+              return [...prevQualified, data.player];
+            });
+          }
+        } else {
+          // For other types of updates, simply refresh the full list
+          fetchPlayers();
+        }
+      };
       
-      console.log(`Fetching players from: ${API_BASE_URL}/api/players/admin/players`);
+      // Listen for player updates
+      socket.on('playerUpdate', handlePlayerUpdate);
       
-      const response = await axios.get(`${API_BASE_URL}/api/players/admin/players`, {
-        timeout: 8000 // Increase timeout for more reliable connection
+      // Listen for game reset
+      socket.on('gameReset', () => {
+        console.log('Game reset notification received');
+        fetchPlayers();
       });
       
-      if (response.data.success) {
-        setPlayers(response.data.players);
-        setGameSettings(response.data.gameSettings);
-        setError('');
-        console.log(`Successfully fetched ${response.data.players.length} players`);
-      } else {
-        setError('Failed to fetch players data: ' + response.data.message);
-        console.error('API returned error:', response.data.message);
-      }
-    } catch (error) {
-      console.error('Error fetching players:', error);
-      if (error.code === 'ECONNABORTED') {
-        setError('Request timed out. Please check your connection and try again.');
-      } else if (!error.response) {
-        setError(`Network error. Please check that the backend server is running on port ${localStorage.getItem('apiPort') || '5005'}.`);
-      } else {
-        setError('Failed to fetch players data: ' + (error.response?.data?.message || error.message));
-      }
-    } finally {
-      setLoading(false);
+      return () => {
+        socket.off('playerUpdate', handlePlayerUpdate);
+        socket.off('gameReset');
+      };
     }
-  };
-  
+  }, [socket, fetchPlayers]);
+
   // Handle authentication
   const handleAuthentication = (e) => {
     e.preventDefault();
@@ -126,16 +307,29 @@ const Admin = () => {
     if (password === 'vishalgolhar10@gmail.com#8421236102#7350168049' && 
         email === 'vishalgolhar10@gmail.com') {
       setAuthenticated(true);
+      // Store authentication state in localStorage
+      localStorage.setItem('adminAuthenticated', 'true');
       fetchPlayers();
       fetchOriginalLinkPosition();
     } else {
       setError('Invalid email or password');
     }
   };
+
+  // Add logout function
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to log out?')) {
+      setAuthenticated(false);
+      localStorage.removeItem('adminAuthenticated');
+      if (socket) {
+        socket.disconnect();
+      }
+    }
+  };
   
-  // Reset game
+  // Handle game reset
   const handleResetGame = async () => {
-    if (window.confirm('Are you sure you want to reset the game? This will delete all player data.')) {
+    if (window.confirm('Are you sure you want to reset the game? This will delete all player data and require players to register again.')) {
       try {
         setError(''); // Clear any previous errors
         const response = await axios.post(`${API_BASE_URL}/api/players/admin/reset`, {}, {
@@ -146,9 +340,15 @@ const Admin = () => {
           await fetchPlayers(); // Refresh the player list
           alert('Game reset successfully');
           
-          // Emit update to all admins
+          // Emit update to all admins and notify players to re-register
           if (socket && socket.connected) {
             socket.emit('playerUpdate', { action: 'reset' });
+            
+            // Force a stronger reset signal that will refresh client pages
+            socket.emit('gameReset', { 
+              timestamp: new Date().getTime(),
+              forceRefresh: true
+            });
           }
         } else {
           setError('Failed to reset game: ' + response.data.message);
@@ -279,6 +479,321 @@ const Admin = () => {
     setSelectedPlayer(null);
   };
   
+  // Manually qualify a player 
+  const handleManuallyQualifyPlayer = async (player) => {
+    if (!player || !player.playerId) return;
+    
+    if (window.confirm(`Are you sure you want to manually qualify ${player.username} for Round 2?`)) {
+      try {
+        setError('');
+        console.log(`Manually qualifying player: ${player.username} (${player.playerId})`);
+        console.log(`Using API Base URL: ${API_BASE_URL}`);
+        
+        // Force refresh the API_BASE_URL to ensure we have the latest port
+        const refreshedBaseUrl = getApiBaseUrl();
+        console.log('Refreshed API Base URL:', refreshedBaseUrl);
+        
+        // First try: use the simple-qualify endpoint
+        let qualifyUrl = `${refreshedBaseUrl}/api/players/simple-qualify`;
+        console.log('Using qualification endpoint:', qualifyUrl);
+        
+        // Log the request payload
+        const payload = {
+          playerId: player.playerId,
+          username: player.username
+        };
+        console.log('Request payload:', JSON.stringify(payload));
+        
+        let success = false;
+        let errorMessage = '';
+        
+        // Try simple-qualify first
+        try {
+          console.log(`Making qualification request to: ${qualifyUrl}`);
+          const response = await axios.post(qualifyUrl, payload, {
+            timeout: 5000
+          });
+          
+          console.log('Qualification response:', response.data);
+          
+          if (response.data.success) {
+            success = true;
+            // Update the UI immediately without waiting for server refresh
+            updateQualifiedPlayer(player);
+            
+            // Show success message
+            alert(`${player.username} has been manually qualified for Round 2!`);
+          } else {
+            errorMessage = response.data.message || 'Unknown error';
+            console.error('Server returned error:', response.data);
+          }
+        } catch (error) {
+          console.log('Error with simple-qualify, trying fallback...', error);
+          
+          // Try direct-qualify as fallback
+          try {
+            console.log('Attempting direct-qualify fallback...');
+            qualifyUrl = `${refreshedBaseUrl}/api/players/direct-qualify`;
+            console.log(`Making fallback request to: ${qualifyUrl}`);
+            
+            const fallbackResponse = await axios.post(qualifyUrl, payload, {
+              timeout: 5000
+            });
+            
+            console.log('Fallback qualification response:', fallbackResponse.data);
+            
+            if (fallbackResponse.data.success) {
+              success = true;
+              // Update the UI immediately without waiting for server refresh
+              updateQualifiedPlayer(player);
+              
+              // Show success message
+              alert(`${player.username} has been manually qualified for Round 2!`);
+            } else {
+              errorMessage = fallbackResponse.data.message || 'Unknown error with fallback method';
+              console.error('Fallback server returned error:', fallbackResponse.data);
+            }
+          } catch (fallbackError) {
+            console.error('Both qualification methods failed:', fallbackError);
+            
+            // Try one last attempt: create a qualified player directly via admin API
+            try {
+              console.log('Attempting final method: admin update-status...');
+              const adminUrl = `${refreshedBaseUrl}/api/players/update-status`;
+              
+              const adminResponse = await axios.post(adminUrl, {
+                playerId: player.playerId,
+                username: player.username,
+                status: 'Qualified for Round 2'
+              }, {
+                timeout: 5000
+              });
+              
+              if (adminResponse.data.success) {
+                success = true;
+                // Update the UI immediately
+                updateQualifiedPlayer(player);
+                alert(`${player.username} has been manually qualified for Round 2 using admin method!`);
+              } else {
+                throw new Error(adminResponse.data.message || 'Admin qualification failed');
+              }
+            } catch (adminError) {
+              console.error('All qualification methods failed:', adminError);
+              throw fallbackError; // Re-throw the original error for handling
+            }
+          }
+        }
+        
+        // If none of the methods succeeded, show error
+        if (!success) {
+          setError(`Failed to qualify player: ${errorMessage}`);
+        }
+      } catch (error) {
+        console.error('Error qualifying player:', error);
+        
+        // Show detailed error message
+        let errorMessage = 'Failed to qualify player: ';
+        
+        if (error.response) {
+          // The server responded with a status code outside the 2xx range
+          console.error('Server responded with error status:', error.response.status);
+          console.error('Error response data:', error.response.data);
+          
+          // If HTML error page was returned, make it more readable
+          if (typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE html>')) {
+            errorMessage += `${error.response.status}: API endpoint not found. Please check server connection.`;
+          } else {
+            errorMessage += `${error.response.status}: ${error.response.data?.message || JSON.stringify(error.response.data) || 'Unknown error'}`;
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error('No response received from server:', error.request);
+          errorMessage += 'No response from server. Please check if the server is running.';
+        } else {
+          // Something happened in setting up the request
+          console.error('Error setting up request:', error.message);
+          errorMessage += error.message;
+        }
+        
+        setError(errorMessage);
+      }
+    }
+  };
+  
+  // Helper function to update the UI after player qualification
+  const updateQualifiedPlayer = (player) => {
+    console.log('Updating qualified player in UI:', player);
+    
+    // Add the player to the qualified players list locally for immediate UI update
+    const updatedPlayer = {
+      ...player,
+      status: 'Qualified for Round 2',
+      timeTaken: 0 // Setting this to 0 for manually qualified players
+    };
+    
+    // Update the qualified players list immediately
+    setQualifiedPlayers(prevQualified => {
+      // Check if player is already in the list to avoid duplicates
+      const exists = prevQualified.some(p => p.playerId === player.playerId);
+      console.log('Player exists in qualified list:', exists);
+      
+      if (exists) {
+        // Update existing player instead of adding a duplicate
+        return prevQualified.map(p => 
+          p.playerId === player.playerId ? updatedPlayer : p
+        );
+      }
+      // Add to qualified players list
+      const newList = [...prevQualified, updatedPlayer];
+      console.log('Updated qualified players list:', newList);
+      return newList;
+    });
+    
+    // Update the player in the main players list
+    setPlayers(prevPlayers => {
+      return prevPlayers.map(p => {
+        if (p.playerId === player.playerId) {
+          return updatedPlayer;
+        }
+        return p;
+      });
+    });
+    
+    // Emit socket event to update all admin panels
+    if (socket && socket.connected) {
+      console.log('Emitting qualification events via socket');
+      
+      socket.emit('playerQualified', {
+        playerId: player.playerId,
+        username: player.username,
+        status: 'Qualified for Round 2',
+        timeTaken: 0
+      });
+      
+      // Also emit playerUpdate to ensure all admins get the update
+      socket.emit('playerUpdate', {
+        type: 'qualification',
+        player: updatedPlayer
+      });
+    }
+    
+    // Close the player details modal if it's open
+    if (selectedPlayer && selectedPlayer.playerId === player.playerId) {
+      closePlayerDetails();
+    }
+    
+    // Force immediate update of qualified players count in UI
+    const qualifiedCount = document.querySelector('.qualified-count');
+    if (qualifiedCount) {
+      const count = qualifiedPlayers.length + (qualifiedPlayers.some(p => p.playerId === player.playerId) ? 0 : 1);
+      qualifiedCount.textContent = `(${count})`;
+    }
+    
+    // Refresh the player list from the server to ensure all data is in sync
+    console.log('Refreshing player list after qualification...');
+    fetchPlayers();
+  };
+  
+  // Handle player disqualification
+  const handleDisqualifyPlayer = async (player) => {
+    if (!player || !player.playerId) return;
+    
+    if (window.confirm(`Are you sure you want to disqualify ${player.username} for cheating? This action cannot be undone.`)) {
+      try {
+        setError('');
+        console.log('Disqualifying player:', player.username, 'with ID:', player.playerId);
+        
+        // Make the API call to update the database first
+        const response = await axios.post(`${API_BASE_URL}/api/players/admin/disqualify`, {
+          playerId: player.playerId,
+          username: player.username,
+          timestamp: Date.now() // Add timestamp for uniqueness
+        });
+        
+        if (response.data.success) {
+          alert(`${player.username} has been disqualified. Their screen is now frozen.`);
+          
+          // Refresh player list after a brief delay
+          setTimeout(async () => {
+            await fetchPlayers();
+          }, 1000);
+          
+          closePlayerDetails();
+        } else {
+          setError('Failed to disqualify player: ' + response.data.message);
+        }
+      } catch (error) {
+        console.error('Error disqualifying player:', error);
+        setError('Failed to disqualify player: ' + (error.response?.data?.message || error.message));
+      }
+    }
+  };
+  
+  // Add the sync port function to the Admin component 
+  const syncPortWithServer = async () => {
+    try {
+      setError('');
+      console.log('Manually syncing port with server...');
+      
+      // Try to get the port from current-port.txt file on the server
+      const response = await fetch('/current-port.txt', {
+        method: 'GET',
+        cache: 'no-store' // Don't use cached version
+      });
+      
+      if (response.ok) {
+        const serverPort = await response.text();
+        const trimmedPort = serverPort.trim();
+        
+        if (trimmedPort && !isNaN(parseInt(trimmedPort))) {
+          console.log(`Found server port: ${trimmedPort}`);
+          
+          // Update localStorage
+          localStorage.setItem('apiPort', trimmedPort);
+          localStorage.setItem('lastCheckedPort', trimmedPort);
+          localStorage.setItem('lastPortCheck', Date.now().toString());
+          
+          // Check if the port has changed
+          const currentPort = API_BASE_URL.split(':')[2];
+          if (currentPort !== trimmedPort) {
+            console.log(`Port changed from ${currentPort} to ${trimmedPort}`);
+            alert(`Port updated from ${currentPort} to ${trimmedPort}. The page will reload to apply the change.`);
+            window.location.reload();
+            return;
+          }
+          
+          alert(`Successfully synced with server on port ${trimmedPort}.`);
+        } else {
+          throw new Error('Invalid port received from server');
+        }
+      } else {
+        throw new Error(`Server returned status ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error syncing port with server:', error);
+      setError(`Failed to sync port: ${error.message}. Try direct manual entry below.`);
+    }
+  };
+
+  // Add a function to manually set the port
+  const manuallySetPort = () => {
+    const portInput = prompt('Enter the server port number:');
+    if (portInput && !isNaN(parseInt(portInput))) {
+      const port = portInput.trim();
+      console.log(`Manually setting port to: ${port}`);
+      
+      // Update localStorage
+      localStorage.setItem('apiPort', port);
+      localStorage.setItem('lastCheckedPort', port);
+      localStorage.setItem('lastPortCheck', Date.now().toString());
+      
+      alert(`Port set to ${port}. The page will reload to apply the change.`);
+      window.location.reload();
+    } else if (portInput !== null) {
+      alert('Please enter a valid port number.');
+    }
+  };
+  
   // If not authenticated, show login form
   if (!authenticated) {
     return (
@@ -342,11 +857,6 @@ const Admin = () => {
     .filter(player => !showQualifiedOnly || player.status === 'Qualified for Round 2');
 
   // Get qualified players
-  const qualifiedPlayers = players
-    .filter(player => player.status === 'Qualified for Round 2')
-    .sort((a, b) => (a.timeTaken || Infinity) - (b.timeTaken || Infinity));
-    
-  // Calculate qualification statistics
   const qualificationStats = {
     totalTime: 0,
     averageTime: 0,
@@ -417,7 +927,7 @@ const Admin = () => {
     setCopySuccess('CSV exported!');
     setTimeout(() => setCopySuccess(''), 3000);
   };
-  
+
   return (
     <section className="admin">
       <div className="container">
@@ -429,16 +939,28 @@ const Admin = () => {
           <div className="admin-dashboard-header">
             <h1>Admin Dashboard</h1>
             
-            <div className="quick-access-panel">
-              <div className="quick-access-item">
-                <h3>Hidden Links</h3>
-                <p>View and manage all hidden links in the game</p>
-                <a href="#hidden-links-section" className="quick-access-btn">
-                  <span className="btn-icon">🔍</span>
-                  Jump to Hidden Links
-                </a>
+            <div className="server-connection-status">
+              <h3>Server Connection</h3>
+              <p>Connected to API at: {API_BASE_URL}</p>
+              <div className="port-actions">
+                <button 
+                  className="sync-port-btn" 
+                  onClick={syncPortWithServer}
+                  title="Get the current port from the server"
+                >
+                  <span className="btn-icon">🔄</span> Sync Port
+                </button>
+                <button 
+                  className="manual-port-btn" 
+                  onClick={manuallySetPort}
+                  title="Manually enter the server port"
+                >
+                  <span className="btn-icon">📝</span> Set Port Manually
+                </button>
               </div>
-              
+            </div>
+            
+            <div className="quick-access-panel">
               <div className="quick-access-item">
                 <h3>Qualified Players</h3>
                 <p>View players who have qualified for Round 2</p>
@@ -455,6 +977,15 @@ const Admin = () => {
                   <span className="btn-icon">⚙️</span>
                   Jump to Game Controls
                 </a>
+              </div>
+              
+              <div className="quick-access-item">
+                <h3>Admin Actions</h3>
+                <p>Logout and manage session</p>
+                <button onClick={handleLogout} className="quick-access-btn logout-btn">
+                  <span className="btn-icon">🔓</span>
+                  Logout
+                </button>
               </div>
             </div>
           </div>
@@ -509,7 +1040,7 @@ const Admin = () => {
                   <div className="round-step-label">Round 2</div>
                 </div>
                 <div className="round-connector"></div>
-                <div className={`round-step ${gameSettings.activeRound >= 3 ? 'active' : ''}`}>
+                <div className={`round-step ${gameSettings.activeRound >= 3 ? 'active' : ''} ${gameSettings.activeRound > 3 ? 'completed' : ''}`}>
                   <div className="round-step-number">3</div>
                   <div className="round-step-label">Round 3</div>
                 </div>
@@ -547,16 +1078,6 @@ const Admin = () => {
             </div>
           </div>
           
-          {/* Hidden Links Tracker */}
-          <div id="hidden-links-section" className="admin-section">
-            <h2 className="section-title">
-              <span className="section-icon">🔍</span>
-              Hidden Links Tracker
-              <span className="section-subtitle">View all possible link locations and player-specific links</span>
-            </h2>
-            <LinkTracker players={players} />
-          </div>
-          
           {/* Qualified Players Section */}
           <div id="qualified-players-section" className="admin-section">
             <h2 className="section-title">
@@ -564,6 +1085,75 @@ const Admin = () => {
               Qualified Players
               <span className="section-subtitle">Players who have successfully found the hidden link</span>
             </h2>
+            <div className="qualified-players-section">
+              <h2>Qualified Players (Round 2)</h2>
+              <div className="qualified-players-count">
+                Total Qualified: {qualifiedPlayers.length}
+              </div>
+              
+              {loading ? (
+                <div className="loading-message">Loading players data...</div>
+              ) : error ? (
+                <div className="error-message">{error}</div>
+              ) : (
+                qualifiedPlayers.length === 0 ? (
+                  <div className="no-qualified-players">
+                    <p>No players have qualified for Round 2 yet.</p>
+                  </div>
+                ) : (
+                  <div className="qualified-players-container">
+                    <div className="qualified-players-header">
+                      <div className="qualified-rank">Rank</div>
+                      <div className="qualified-name">Player Name</div>
+                      <div className="qualified-time">Time Taken</div>
+                      <div className="qualified-actions">Actions</div>
+                    </div>
+                    {qualifiedPlayers
+                      // Sort players by time taken, but place manual qualifications (time = 0) at the bottom
+                      .sort((a, b) => {
+                        // If both are manual qualifications (time = 0), sort alphabetically
+                        if (a.timeTaken === 0 && b.timeTaken === 0) {
+                          return a.username.localeCompare(b.username);
+                        }
+                        // If only a is a manual qualification, place it after b
+                        if (a.timeTaken === 0) return 1;
+                        // If only b is a manual qualification, place it after a
+                        if (b.timeTaken === 0) return -1;
+                        // Otherwise sort by time taken
+                        return a.timeTaken - b.timeTaken;
+                      })
+                      .map((player, index) => (
+                        <div 
+                          key={player.playerId} 
+                          className={`qualified-player-row ${player.timeTaken === 0 ? 'manual-qualification' : ''}`}
+                        >
+                          <div className="qualified-rank">{index + 1}</div>
+                          <div className="qualified-name">
+                            {player.username}
+                            {player.timeTaken === 0 && (
+                              <span className="manual-qualification-badge" title="Manually Qualified">🔄</span>
+                            )}
+                          </div>
+                          <div className="qualified-time">
+                            {player.timeTaken === 0 
+                              ? <span className="manual-time">Manual</span> 
+                              : `${(player.timeTaken / 1000).toFixed(2)}s`}
+                          </div>
+                          <div className="qualified-actions">
+                            <button 
+                              className="view-details-btn"
+                              onClick={() => viewPlayerDetails(player)}
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )
+              )}
+            </div>
+            
             <div className="qualified-header-actions">
               <button 
                 className="copy-qualified-btn" 
@@ -596,36 +1186,6 @@ const Admin = () => {
                   <span className="stat-label">Slowest Time:</span>
                   <span className="stat-value">{qualificationStats.slowestTime.toFixed(2)}s</span>
                 </div>
-              </div>
-            )}
-            
-            {qualifiedPlayers.length === 0 ? (
-              <div className="no-qualified-players">
-                <p>No players have qualified for Round 2 yet.</p>
-              </div>
-            ) : (
-              <div className="qualified-players-container">
-                <div className="qualified-players-header">
-                  <div className="qualified-rank">Rank</div>
-                  <div className="qualified-name">Player Name</div>
-                  <div className="qualified-time">Time Taken</div>
-                  <div className="qualified-actions">Actions</div>
-                </div>
-                {qualifiedPlayers.map((player, index) => (
-                  <div key={player.playerId} className="qualified-player-row">
-                    <div className="qualified-rank">{index + 1}</div>
-                    <div className="qualified-name">{player.username}</div>
-                    <div className="qualified-time">{(player.timeTaken / 1000).toFixed(2)}s</div>
-                    <div className="qualified-actions">
-                      <button 
-                        className="view-details-btn"
-                        onClick={() => viewPlayerDetails(player)}
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
               </div>
             )}
           </div>
@@ -745,7 +1305,11 @@ const Admin = () => {
                     <div className="qualification-icon">🏆</div>
                     <div className="qualification-info">
                       <h3>Qualified for Round 2</h3>
-                      <p>Time: {(selectedPlayer.timeTaken / 1000).toFixed(2)} seconds</p>
+                      {selectedPlayer.timeTaken === 0 ? (
+                        <p>Manually qualified by admin</p>
+                      ) : (
+                        <p>Time: {(selectedPlayer.timeTaken / 1000).toFixed(2)} seconds</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -772,6 +1336,28 @@ const Admin = () => {
                   <div className="info-group">
                     <h3>Joined At</h3>
                     <p>{new Date(selectedPlayer.timestamp).toLocaleString()}</p>
+                  </div>
+                  
+                  {/* Manual qualification action */}
+                  {selectedPlayer.status !== 'Qualified for Round 2' && (
+                    <div className="manual-actions">
+                      <button 
+                        className="qualify-btn"
+                        onClick={() => handleManuallyQualifyPlayer(selectedPlayer)}
+                      >
+                        Manually Qualify for Round 2
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Disqualify player action */}
+                  <div className="manual-actions disqualify-actions">
+                    <button 
+                      className="disqualify-btn"
+                      onClick={() => handleDisqualifyPlayer(selectedPlayer)}
+                    >
+                      Disqualify for Cheating
+                    </button>
                   </div>
                   
                   {/* Real Link Location */}

@@ -12,7 +12,7 @@ const PlayerSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Playing', 'Qualified for Round 2', 'Failed'],
+    enum: ['Playing', 'Qualified for Round 2', 'Failed', 'Disqualified for Cheating'],
     default: 'Playing'
   },
   timestamp: {
