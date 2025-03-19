@@ -3,66 +3,9 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import './Admin.css';
 import { generateHash, getLinkLocations, getDecoyDestinations } from '../../utils/linkHider';
+import { getApiBaseUrl, getSocketUrl } from '../../utils/apiConfig';
 
-// Function to get the API base URL
-const getApiBaseUrl = () => {
-  // Default to port 5000 if we can't read the file
-  let port = 5000;
-  
-  try {
-    // Try to read the port from localStorage (set by other components)
-    const savedPort = localStorage.getItem('apiPort');
-    if (savedPort) {
-      port = savedPort;
-    }
-    
-    // Check if we should sync with the current-port.txt file
-    const currentPort = localStorage.getItem('lastCheckedPort');
-    const lastCheck = localStorage.getItem('lastPortCheck');
-    const now = Date.now();
-    
-    // Only check for port updates every 15 seconds to avoid excessive polling
-    if (!currentPort || !lastCheck || (now - parseInt(lastCheck)) > 15000) {
-      console.log('Checking for updated port from server...');
-      
-      // Try to get the port from current-port.txt via an API call
-      fetch('/current-port.txt')
-        .then(response => {
-          if (response.ok) {
-            return response.text();
-          }
-          throw new Error('Could not read current-port.txt');
-        })
-        .then(serverPort => {
-          if (serverPort && !isNaN(parseInt(serverPort.trim()))) {
-            const newPort = serverPort.trim();
-            console.log(`Found new port in current-port.txt: ${newPort}`);
-            
-            // Update localStorage
-            localStorage.setItem('apiPort', newPort);
-            localStorage.setItem('lastCheckedPort', newPort);
-            localStorage.setItem('lastPortCheck', now.toString());
-            
-            // Force refresh if port changed
-            if (port !== newPort) {
-              console.log(`Port changed from ${port} to ${newPort}, refreshing...`);
-              window.location.reload();
-            }
-          }
-        })
-        .catch(err => {
-          console.warn('Error checking port file:', err);
-        });
-    }
-    
-    console.log(`Admin component using API port: ${port}`);
-  } catch (error) {
-    console.error('Error getting API port:', error);
-  }
-  
-  return `http://localhost:${port}`;
-};
-
+// Use the utility function for API base URL
 const API_BASE_URL = getApiBaseUrl();
 console.log('==== API_BASE_URL ====', API_BASE_URL);
 
@@ -168,10 +111,14 @@ const Admin = () => {
   // Connect to socket.io server
   useEffect(() => {
     if (authenticated) {
-      const newSocket = io(API_BASE_URL, {
+      const socketUrl = getSocketUrl();
+      console.log('Admin connecting to socket at:', socketUrl);
+      
+      const newSocket = io(socketUrl, {
         reconnection: true,
         reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        reconnectionDelay: 1000,
+        path: '/socket.io'
       });
       
       setSocket(newSocket);

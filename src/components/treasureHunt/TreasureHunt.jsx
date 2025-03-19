@@ -1,32 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { Link } from 'react-router-dom';
 import './TreasureHunt.css';
 import TextWithHiddenLinks from './TextWithHiddenLinks';
 import './TextWithHiddenLinks.css';
 import HiddenLink from './HiddenLink';
 import { getPageLinks } from '../../utils/linkHider';
-
-// Function to get the API base URL
-const getApiBaseUrl = () => {
-  // Default to port 5000 if we can't read the file
-  let port = 5000;
-  
-  try {
-    // Try to read the port from localStorage (set by other components)
-    const savedPort = localStorage.getItem('apiPort');
-    if (savedPort) {
-      port = savedPort;
-    }
-  } catch (error) {
-    console.error('Error getting API port:', error);
-  }
-  
-  return `http://localhost:${port}`;
-};
+import { getApiBaseUrl, getSocketUrl } from '../../utils/apiConfig';
 
 const API_BASE_URL = getApiBaseUrl();
+console.log('TreasureHunt using API Base URL:', API_BASE_URL);
 
 // Educational content about online learning with hidden links
 const educationalContent = [
@@ -132,10 +117,12 @@ const TreasureHunt = () => {
     initializePlayer();
     
     // Set up socket connection for real-time game state updates
-    const newSocket = io(API_BASE_URL, {
+    const socketUrl = getSocketUrl();
+    const newSocket = io(socketUrl, {
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      path: '/socket.io'
     });
     
     setSocket(newSocket);

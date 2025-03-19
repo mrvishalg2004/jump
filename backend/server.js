@@ -12,30 +12,43 @@ require('dotenv').config();
 console.log('======================================');
 console.log('Starting server...');
 console.log('NODE_ENV:', process.env.NODE_ENV);
-// Don't log PORT here since it's not defined yet
+console.log('VERCEL_ENV:', process.env.VERCEL_ENV);
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
+
+// Setup CORS options based on environment
+const corsOptions = {
+  origin: process.env.VERCEL_ENV ? '*' : 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  credentials: true
+};
+
+// Configure Socket.io with CORS
 const io = socketIo(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
 
 // Make io available globally
 global.io = io;
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve the current-port.txt file from the root
 app.get('/current-port.txt', (req, res) => {
   try {
-    // Check if file exists first
+    // For Vercel, use 443 for HTTPS as the port
+    if (process.env.VERCEL_ENV) {
+      res.set('Content-Type', 'text/plain');
+      res.send('443');
+      return;
+    }
+    
+    // Check if file exists first (local development)
     if (fs.existsSync('./current-port.txt')) {
       const port = fs.readFileSync('./current-port.txt', 'utf8');
       res.set('Content-Type', 'text/plain');
@@ -51,9 +64,35 @@ app.get('/current-port.txt', (req, res) => {
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/treasure-hunt';
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.error('MongoDB Connection Error:', err));
+console.log('Connecting to MongoDB...');
+
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  retryWrites: true
+})
+.then(() => console.log('MongoDB Connected Successfully'))
+.catch(err => {
+  console.error('MongoDB Connection Error:', err);
+  // Don't exit process on connection error in production
+  if (!process.env.VERCEL_ENV) {
+    process.exit(1);
+  }
+});
+
+// Handle connection events
+mongoose.connection.on('error', err => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected, attempting to reconnect...');
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected successfully');
+});
 
 // Routes
 const playerRoutes = require('./routes/playerRoutes');
@@ -144,6 +183,21 @@ app.use('*', (req, res) => {
 // Start server with dynamic port assignment
 const startServer = async () => {
   try {
+    // For Vercel environment, use their port or 3000 as fallback
+    if (process.env.VERCEL_ENV) {
+      const PORT = process.env.PORT || 3000;
+      console.log('Vercel deployment detected, using port:', PORT);
+      console.log('======================================');
+      
+      // Start the server
+      server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        console.log(`Vercel deployment active`);
+      });
+      return;
+    }
+    
+    // For local development, use portfinder for dynamic port assignment
     // Configure portfinder to start looking from port 5000
     portfinder.basePort = 5000;
     

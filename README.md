@@ -1,14 +1,95 @@
-# Treasure Hunt Game
+# Treasure Hunt Educational Game
 
-An interactive web-based treasure hunt where players must find a hidden link to proceed to the next round. Only the first 15 players who find and click the correct link qualify for Round 2.
+This is a web-based treasure hunt game built with React frontend and Express/MongoDB backend.
+
+## Features
+
+- Real-time multiplayer treasure hunt game using Socket.io
+- Admin dashboard to monitor and control the game
+- Three rounds of competitive gameplay
+- Authentication system for participants
+- MongoDB database for storing player data and game state
+
+## Deployment to Vercel
+
+This project is configured for easy deployment to Vercel. Follow these steps:
+
+### Prerequisites
+
+1. A GitHub account
+2. A Vercel account (you can sign up at [vercel.com](https://vercel.com) using your GitHub account)
+3. A MongoDB Atlas account for the database
+
+### Step 1: Push your code to GitHub
+
+1. Create a new GitHub repository
+2. Initialize git in your project directory if not already done:
+   ```
+   git init
+   ```
+3. Add your files to git:
+   ```
+   git add .
+   ```
+4. Commit your changes:
+   ```
+   git commit -m "Initial commit"
+   ```
+5. Add your GitHub repository as a remote:
+   ```
+   git remote add origin https://github.com/yourusername/your-repo-name.git
+   ```
+6. Push your code to GitHub:
+   ```
+   git push -u origin main
+   ```
+
+### Step 2: Deploy to Vercel
+
+1. Log in to your Vercel account
+2. Click "New Project"
+3. Import your GitHub repository
+4. Configure the project:
+   - Root Directory: Leave as `/` (default)
+   - Build Command: Vercel will automatically detect it from the `vercel.json` file
+   - Output Directory: Vercel will automatically detect it
+   
+5. Add your environment variables:
+   - `MONGO_URI`: Your MongoDB connection string
+   
+6. Click "Deploy"
+
+Vercel will automatically build and deploy your project. Once the deployment is complete, you'll be provided with a URL where your application is hosted.
+
+### Troubleshooting
+
+- If you encounter socket.io connection issues, make sure the path is correctly set in your frontend code
+- If MongoDB connections fail, verify your Atlas connection string is correct and the IP is whitelisted
+
+## Local Development
+
+1. Install dependencies:
+   ```
+   npm install
+   cd backend && npm install
+   ```
+
+2. Start the backend server:
+   ```
+   cd backend && npm start
+   ```
+
+3. In a new terminal, start the frontend:
+   ```
+   npm start
+   ```
 
 ## Tech Stack
 
-- **Frontend**: React.js
-- **Backend**: Node.js + Express.js
-- **Database**: MongoDB
-- **Authentication**: Unique Player IDs (stored in MongoDB)
-- **Real-time Updates**: Socket.io
+- Frontend: React, Socket.io client
+- Backend: Node.js, Express, Socket.io
+- Database: MongoDB
+- Deployment: Vercel
 
 ## Game Flow
 
@@ -16,50 +97,6 @@ An interactive web-based treasure hunt where players must find a hidden link to 
 2. **Hidden Link Mechanism**: The real link is hidden within HTML, CSS, or JavaScript Console.
 3. **Backend Logic**: Express.js routes to handle player validation and progress tracking.
 4. **Admin Panel**: For tracking players and game progress.
-
-## How to Run the Project
-
-### Prerequisites
-
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
-
-### Backend Setup
-
-1. Navigate to the backend directory:
-   ```
-   cd backend
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-3. Create a `.env` file with the following content:
-   ```
-   PORT=5000
-   ```
-
-4. Start the backend server:
-   ```
-   npm run dev
-   ```
-
-### Frontend Setup
-
-1. In the root directory, install dependencies:
-   ```
-   npm install
-   ```
-
-2. Start the React development server:
-   ```
-   npm start
-   ```
-
-3. The application will be available at `http://localhost:3000`
-
 
 ## Hidden Link Clues
 

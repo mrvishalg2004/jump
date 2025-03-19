@@ -10,53 +10,12 @@ import './Home.css';
 import { v4 as uuidv4 } from 'uuid'
 import axios from 'axios'
 import io from 'socket.io-client'
+import { Link } from 'react-router-dom';
+import { getApiBaseUrl, getSocketUrl } from '../../utils/apiConfig';
 
-// Function to get the API base URL
-const getApiBaseUrl = () => {
-  // Default to port 5000 if we can't read the file
-  let port = 5000;
-  
-  try {
-    // Try to read the port from localStorage (set by other components)
-    const savedPort = localStorage.getItem('apiPort');
-    if (savedPort) {
-      port = savedPort;
-    }
-    
-    // Attempt to load port from server
-    fetch('/current-port.txt', { cache: 'no-store' })
-      .then(response => {
-        if (response.ok) return response.text();
-        throw new Error('Failed to fetch port');
-      })
-      .then(serverPort => {
-        if (serverPort && !isNaN(parseInt(serverPort.trim()))) {
-          const newPort = serverPort.trim();
-          console.log(`Found server port: ${newPort}`);
-          
-          // Update localStorage
-          localStorage.setItem('apiPort', newPort);
-          
-          // Force refresh if port changed and we're not in the middle of an operation
-          if (port !== newPort && !localStorage.getItem('registrationInProgress')) {
-            console.log(`Port changed from ${port} to ${newPort}, refreshing...`);
-            window.location.reload();
-          }
-        }
-      })
-      .catch(err => {
-        console.warn('Error checking port file:', err);
-      });
-    
-    console.log(`Home component using API port: ${port}`);
-  } catch (error) {
-    console.error('Error getting API port:', error);
-  }
-  
-  return `http://localhost:${port}`;
-};
-
+// Use the utility function for API base URL
 const API_BASE_URL = getApiBaseUrl();
+console.log('Using API Base URL:', API_BASE_URL);
 
 // CSS Animations for the component
 const animations = `
@@ -198,10 +157,14 @@ const Home = () => {
     fetchGameState();
     
     // Set up socket connection for real-time game state updates
-    const newSocket = io(API_BASE_URL, {
+    const socketUrl = getSocketUrl();
+    console.log('Connecting to socket at:', socketUrl);
+    
+    const newSocket = io(socketUrl, {
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      path: '/socket.io'
     });
     
     setSocket(newSocket);
