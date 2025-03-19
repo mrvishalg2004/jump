@@ -32,7 +32,6 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "vercel-build": "rm -f package-lock.json && npm install --legacy-peer-deps && react-scripts build",
-    "postinstall": "rm -rf node_modules/google-maps-react"
   },
   "eslintConfig": {
     "extends": [
