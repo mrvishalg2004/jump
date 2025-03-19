@@ -7,7 +7,7 @@
       "use": "@vercel/static-build", 
       "config": { 
         "distDir": "build",
-        "buildCommand": "npm run vercel-build"
+        "buildCommand": "chmod +x vercel-build-override.sh && ./vercel-build-override.sh"
       } 
     }
   ],

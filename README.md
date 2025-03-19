@@ -65,8 +65,10 @@ Vercel will automatically build and deploy your project. Once the deployment is 
 
 - If you encounter socket.io connection issues, make sure the path is correctly set in your frontend code
 - If MongoDB connections fail, verify your Atlas connection string is correct and the IP is whitelisted
-- If you encounter npm dependency conflicts during deployment, the project includes a `.npmrc` file with `legacy-peer-deps=true` which should resolve these issues automatically
-- If deployment fails with package conflicts, you may need to manually run `npm install --legacy-peer-deps` before deploying
+- If you encounter npm dependency conflicts during deployment, particularly with `google-maps-react`:
+  - The project includes a `.npmrc` file with `legacy-peer-deps=true` which should resolve these issues automatically
+  - A custom build script (`vercel-build-override.sh`) is included that removes `package-lock.json` and uses a clean dependency list
+  - If you still face issues, try manually deploying with: `vercel --force`
 
 ## Local Development
 
