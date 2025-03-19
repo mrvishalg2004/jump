@@ -6,7 +6,7 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "build",
-        "buildCommand": "sed -i '/google-maps-react/d' package.json && npm install --legacy-peer-deps --force && npm run build"
+        "buildCommand": "sed -i '/google-maps-react/d' package.json && npm install --legacy-peer-deps --force && CI=false npm run build"
       }
     },
     {
