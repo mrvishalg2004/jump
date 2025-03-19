@@ -39,7 +39,6 @@ An interactive web-based treasure hunt where players must find a hidden link to 
 3. Create a `.env` file with the following content:
    ```
    PORT=5000
-   MONGO_URI=mongodb+srv://rounds:rounds123@aiodysseyrounds.rr88p.mongodb.net/?retryWrites=true&w=majority&appName=AIODYSSEYRounds
    ```
 
 4. Start the backend server:
@@ -61,11 +60,6 @@ An interactive web-based treasure hunt where players must find a hidden link to 
 
 3. The application will be available at `http://localhost:3000`
 
-## Game Routes
-
-- `/treasure-hunt` - The main treasure hunt page
-- `/round2` - The page for qualified players
-- `/admin` - Admin dashboard (Email: vishalgolhar10@gmail.com, Password: vishalgolhar10@gmail.com#8421236102#7350168049)
 
 ## Hidden Link Clues
 

@@ -1107,4 +1107,22 @@ router.post('/simple-qualify', async (req, res) => {
   }
 });
 
+// Get admin credentials
+router.get('/admin/credentials', (req, res) => {
+  try {
+    // This route has been deprecated for security reasons
+    return res.status(404).json({
+      success: false,
+      message: 'Endpoint not found'
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router; 
