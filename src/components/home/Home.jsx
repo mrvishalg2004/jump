@@ -354,11 +354,18 @@ const Home = () => {
     
     const attemptRegistration = async () => {
       try {
+        console.log(`Attempt ${retryCount + 1}/${maxRetries} to register at ${apiUrl}`);
+        
+        // Add a small delay before sending the request to avoid rate limiting
+        if (retryCount > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
         const response = await axios.post(apiUrl, {
           playerId,
           username
         }, {
-          timeout: 8000 // Increase timeout for reliability
+          timeout: 10000 // Increase timeout for reliability
         });
         
         if (response.data.success) {
@@ -397,10 +404,12 @@ const Home = () => {
       } catch (error) {
         console.error('Registration error:', error);
         
+        // Increment the retry count for the next attempt
         const currentRetries = retryCount + 1;
+        setRetryCount(currentRetries);
+        
         if (currentRetries < maxRetries) {
           setRetrying(true);
-          setRetryCount(currentRetries);
           console.log(`Retrying registration (${currentRetries}/${maxRetries})...`);
           
           // Try again after a delay
@@ -411,8 +420,17 @@ const Home = () => {
         // Update the UI to show we're not retrying anymore
         setRetrying(false);
         
-        // Try alternative port as last resort
-        if (!error.response && retryCount >= maxRetries) {
+        // Handle specific deployment errors
+        if (process.env.NODE_ENV === 'production') {
+          // In production, inform user about connectivity issues
+          setUsernameError('Unable to connect to the server. Please try again later.');
+          localStorage.removeItem('registrationInProgress');
+          setIsLoading(false);
+          return { success: false };
+        }
+        
+        // Try alternative port as last resort (development only)
+        if (!error.response && currentRetries >= maxRetries) {
           try {
             console.log('Trying alternative port...');
             const currentPort = parseInt(API_BASE_URL.split(':')[2]);
@@ -440,7 +458,7 @@ const Home = () => {
               setRegisteredName(username);
               setRegistrationSuccess(true);
               setShowNameForm(false);
-              return;
+              return { success: true };
             }
           } catch (altError) {
             console.error('Alternative registration failed:', altError);
@@ -457,6 +475,7 @@ const Home = () => {
         }
         
         localStorage.removeItem('registrationInProgress');
+        return { success: false };
       } finally {
         setIsLoading(false);
       }
