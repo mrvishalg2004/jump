@@ -93,9 +93,11 @@ const Home = () => {
   const [validationMessage, setValidationMessage] = useState(null);
   const [retrying, setRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [retryMax, setRetryMax] = useState(3);
   const [screenLocked, setScreenLocked] = useState(false);
   const [initialLockCheckDone, setInitialLockCheckDone] = useState(false);
+  
+  // Define maxRetries as a constant at component level
+  const maxRetries = 3;
 
   useEffect(() => {
     // Set start time when component mounts
@@ -349,7 +351,6 @@ const Home = () => {
     console.log(`Registering player at: ${apiUrl}`, { playerId, username });
     
     let retryCount = 0;
-    const maxRetries = 3;
     
     const attemptRegistration = async () => {
       try {
@@ -397,10 +398,10 @@ const Home = () => {
         console.error('Registration error:', error);
         
         const currentRetries = retryCount + 1;
-        if (currentRetries < retryMax) {
+        if (currentRetries < maxRetries) {
           setRetrying(true);
           setRetryCount(currentRetries);
-          console.log(`Retrying registration (${currentRetries}/${retryMax})...`);
+          console.log(`Retrying registration (${currentRetries}/${maxRetries})...`);
           
           // Try again after a delay
           await new Promise(resolve => setTimeout(resolve, 1500));
@@ -1064,7 +1065,7 @@ const Home = () => {
               <button type="submit" disabled={isLoading || retrying}>
                 {isLoading ? (
                   retrying ? 
-                  `Retrying... (${retryCount}/${retryMax})` : 
+                  `Retrying... (${retryCount}/${maxRetries})` : 
                   'Registering...'
                 ) : 'Start Game'}
               </button>
