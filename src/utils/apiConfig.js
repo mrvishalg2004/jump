@@ -7,18 +7,9 @@ const getApiBaseUrl = () => {
       return process.env.REACT_APP_API_URL;
     }
     
-    // Detect if we're on Vercel or similar platform
-    const hostname = window.location.hostname;
-    if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
-      console.log('Detected deployment on Vercel/Netlify');
-      
-      // For same-domain deployments, ensure we're using an absolute URL with https
-      // This ensures socket connections work properly in production
-      return `https://${hostname}`;
-    }
-    
-    // For self-hosted deployments where frontend and backend are on same domain
-    console.log('Using current origin as API path in production');
+    // Use window.location.origin which includes protocol, hostname, and port
+    // This works better than manually constructing the URL
+    console.log('Using current origin as API path in production:', window.location.origin);
     return window.location.origin;
   }
   
@@ -43,14 +34,7 @@ const getSocketUrl = () => {
       return process.env.REACT_APP_SOCKET_URL;
     }
     
-    // Always use the full origin for socket connections in production
-    // This ensures proper websocket connections
-    const hostname = window.location.hostname;
-    if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
-      console.log('Using secure WebSocket URL for production:', `wss://${hostname}`);
-      return `wss://${hostname}`;
-    }
-    
+    // In production, we use the same origin for socket connections
     console.log('Using current origin for socket in production:', window.location.origin);
     return window.location.origin;
   }

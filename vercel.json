@@ -6,21 +6,24 @@
       "src": "package.json", 
       "use": "@vercel/static-build", 
       "config": { 
-        "distDir": "build",
-        "buildCommand": "chmod +x vercel.sh && ./vercel.sh"
+        "distDir": "build"
       } 
     }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "backend/server.js" },
-    { "src": "/socket.io/(.*)", "dest": "backend/server.js" },
     { "src": "/socket.io", "dest": "backend/server.js" },
+    { "src": "/socket.io/(.*)", "dest": "backend/server.js" },
+    { "src": "/socket-check", "dest": "backend/server.js" },
+    { "src": "/health", "dest": "backend/server.js" },
+    { "src": "/current-port.txt", "dest": "backend/server.js" },
     { "src": "^/static/(.*)", "dest": "/static/$1" },
     { "src": ".*", "dest": "/index.html" }
   ],
   "env": {
     "CI": "false",
     "SKIP_PREFLIGHT_CHECK": "true",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "VERCEL_ENV": "production"
   }
 } 

@@ -149,12 +149,44 @@ app.post('/api/verify-round2-link', (req, res) => {
 
 // Socket.io connection
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  console.log('New client connected with socket ID:', socket.id);
   
   // Join admin room
-  socket.on('joinAdminRoom', () => {
+  socket.on('joinAdminRoom', (data) => {
     socket.join('adminRoom');
-    console.log('Admin joined');
+    console.log('Admin joined with data:', data || 'no data');
+    
+    // Emit socket status to the admin
+    socket.emit('socketStatus', {
+      connected: true,
+      socketId: socket.id,
+      timestamp: Date.now()
+    });
+  });
+  
+  // Get player data
+  socket.on('getPlayerData', async () => {
+    try {
+      console.log('Admin requested player data');
+      
+      // Get all players from the database
+      const playerModel = require('./models/Player');
+      const players = await playerModel.find({});
+      console.log(`Returning ${players.length} players to admin`);
+      
+      // Emit player data to the admin
+      socket.emit('playerDataResponse', {
+        success: true,
+        players,
+        count: players.length
+      });
+    } catch (error) {
+      console.error('Error getting player data:', error);
+      socket.emit('playerDataResponse', {
+        success: false,
+        message: error.message
+      });
+    }
   });
   
   // Emit player updates to admin
@@ -181,8 +213,15 @@ io.on('connection', (socket) => {
     });
   });
   
+  // Send initial connection status
+  socket.emit('connectionStatus', { 
+    connected: true,
+    socketId: socket.id,
+    serverTime: new Date().toISOString()
+  });
+  
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    console.log('Client disconnected with socket ID:', socket.id);
   });
 });
 
@@ -191,17 +230,7 @@ app.get('/', (req, res) => {
   res.status(200).send('Treasure Hunt API is running!');
 });
 
-// Add error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Add health check endpoint for socket.io
+// Add health check endpoint for socket.io - MOVED UP to ensure it's reachable
 app.get('/socket-check', (req, res) => {
   try {
     res.status(200).json({ 
@@ -221,7 +250,7 @@ app.get('/socket-check', (req, res) => {
   }
 });
 
-// Add a more robust health check endpoint
+// Add a more robust health check endpoint - MOVED UP to ensure it's reachable
 app.get('/health', (req, res) => {
   try {
     const health = {
@@ -241,6 +270,16 @@ app.get('/health', (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+});
+
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 // Catch-all route for debugging missing endpoints
