@@ -62,6 +62,8 @@ const TreasureHunt = () => {
   const [clickCount, setClickCount] = useState(0);
   const [inputLink, setInputLink] = useState('');
   const [token, setToken] = useState('');
+  const [showFindingMessage, setShowFindingMessage] = useState(false);
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
   const history = useHistory();
 
   // Initialize player data and check game state on component mount
@@ -503,6 +505,25 @@ const TreasureHunt = () => {
                 🎉 🏆 🎊
               </div>
               <p>Redirecting to Round Two...</p>
+            </div>
+          </div>
+        )}
+        
+        {showFindingMessage && (
+          <div className="finding-message-overlay">
+            <div className="finding-message-content">
+              <h2>Checking your discovery...</h2>
+              <div className="loading-spinner"></div>
+            </div>
+          </div>
+        )}
+        
+        {showErrorMessage && (
+          <div className="error-message-overlay">
+            <div className="error-message-content">
+              <h2>Oops! Something went wrong</h2>
+              <p>There was an error processing your request. Please try again.</p>
+              <button onClick={() => setShowErrorMessage(false)}>Close</button>
             </div>
           </div>
         )}
