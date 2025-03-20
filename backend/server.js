@@ -40,11 +40,11 @@ const io = socketIo(server, {
     allowedHeaders: ['Content-Type', 'Authorization']
   },
   path: '/socket.io',
-  allowEIO3: true, // Allow Engine.IO v3 compatibility for older clients
-  pingTimeout: 60000, // Increase ping timeout
-  pingInterval: 25000, // Increase ping interval
-  connectTimeout: 45000, // Increase connection timeout
-  maxHttpBufferSize: 1e8 // Increase buffer size for large payloads
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  connectTimeout: 45000,
+  maxHttpBufferSize: 1e8
 });
 
 // Make io available globally
@@ -191,13 +191,56 @@ app.get('/', (req, res) => {
   res.status(200).send('Treasure Hunt API is running!');
 });
 
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
 // Add health check endpoint for socket.io
 app.get('/socket-check', (req, res) => {
-  res.status(200).json({ 
-    socketAvailable: true,
-    message: 'Socket.IO server is running',
-    timestamp: new Date().toISOString()
-  });
+  try {
+    res.status(200).json({ 
+      socketAvailable: true,
+      message: 'Socket.IO server is running',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      vercelEnv: process.env.VERCEL_ENV || 'development'
+    });
+  } catch (error) {
+    console.error('Error in socket-check endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error checking socket status',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Add a more robust health check endpoint
+app.get('/health', (req, res) => {
+  try {
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      vercelEnv: process.env.VERCEL_ENV || 'development',
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      socket: io.engine.clientsCount > 0 ? 'active' : 'inactive'
+    };
+    res.status(200).json(health);
+  } catch (error) {
+    console.error('Error in health check:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Health check failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // Catch-all route for debugging missing endpoints

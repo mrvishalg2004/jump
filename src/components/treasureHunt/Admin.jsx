@@ -118,14 +118,16 @@ const Admin = () => {
     
     const newSocket = io(socketUrl, {
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity, // Keep trying to reconnect
       reconnectionDelay: 1000,
-      timeout: 10000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       upgrade: true,
       forceNew: true,
-      autoConnect: true
+      autoConnect: true,
+      withCredentials: true
     });
     
     setSocket(newSocket);
@@ -135,25 +137,48 @@ const Admin = () => {
       try {
         const apiUrl = getApiBaseUrl();
         console.log('Checking socket endpoint at:', `${apiUrl}/socket-check`);
-        const response = await axios.get(`${apiUrl}/socket-check`, {
+        
+        // First try the health endpoint
+        const healthResponse = await axios.get(`${apiUrl}/health`, {
           timeout: 5000,
           headers: {
             'Cache-Control': 'no-cache'
           }
         });
-        console.log('Socket check endpoint response:', response.data);
         
-        if (response.data && response.data.socketAvailable) {
-          console.log('Socket server confirmed available via REST endpoint');
-          setConnectionError(null);
+        console.log('Health check response:', healthResponse.data);
+        
+        if (healthResponse.data.status === 'ok') {
+          // Then check the socket endpoint
+          const socketResponse = await axios.get(`${apiUrl}/socket-check`, {
+            timeout: 5000,
+            headers: {
+              'Cache-Control': 'no-cache'
+            }
+          });
+          
+          console.log('Socket check endpoint response:', socketResponse.data);
+          
+          if (socketResponse.data && socketResponse.data.socketAvailable) {
+            console.log('Socket server confirmed available via REST endpoint');
+            setConnectionError(null);
+            return true;
+          }
         }
+        
+        throw new Error('Socket server health check failed');
       } catch (error) {
         console.error('Failed to check socket endpoint:', error);
         setConnectionError('Socket server health check failed. Check server logs.');
+        return false;
       }
     };
     
+    // Initial health check
     checkSocketEndpoint();
+    
+    // Set up periodic health checks
+    const healthCheckInterval = setInterval(checkSocketEndpoint, 30000);
     
     // Log socket connection events
     newSocket.on('connect', () => {
@@ -260,6 +285,7 @@ const Admin = () => {
     });
 
     return () => {
+      clearInterval(healthCheckInterval);
       if (newSocket) {
         newSocket.disconnect();
       }
