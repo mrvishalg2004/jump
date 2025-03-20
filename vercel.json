@@ -13,7 +13,8 @@
     { "source": "/socket.io/(.*)", "destination": "/backend/server.js" },
     { "source": "/socket-check", "destination": "/backend/server.js" },
     { "source": "/health", "destination": "/backend/server.js" },
-    { "source": "/current-port.txt", "destination": "/backend/server.js" }
+    { "source": "/current-port.txt", "destination": "/backend/server.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "env": {
     "CI": "false",

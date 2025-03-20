@@ -342,7 +342,7 @@ app.use('*', (req, res) => {
 const startServer = async () => {
   try {
     // For Vercel environment, use their port or 3000 as fallback
-    if (process.env.VERCEL_ENV) {
+    if (isVercel) {
       const PORT = process.env.PORT || 3000;
       console.log('Vercel deployment detected, using port:', PORT);
       console.log('======================================');
@@ -356,17 +356,12 @@ const startServer = async () => {
     }
     
     // For local development, use portfinder for dynamic port assignment
-    // Configure portfinder to start looking from port 5000
     portfinder.basePort = 5000;
-    
-    // Find an available port
     const PORT = await portfinder.getPortPromise();
     
-    // Now log the PORT after it's defined
     console.log('Server port:', PORT);
     console.log('======================================');
     
-    // Start the server on the available port
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`API available at http://localhost:${PORT}`);
