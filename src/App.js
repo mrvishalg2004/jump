@@ -34,11 +34,16 @@ function App() {
           console.log('Running in development mode, checking backend port...');
           const detectedPort = await checkBackendPort();
           console.log(`Backend port detected: ${detectedPort}`);
+          setBackendPort(detectedPort);
         } else {
           console.log('Running in production mode, using relative API paths');
         }
+        // Always set backend ready to true after initialization attempt
+        setIsBackendReady(true);
       } catch (error) {
         console.error('Error initializing API configuration:', error);
+        // Set ready to true even if there's an error, to prevent app from getting stuck
+        setIsBackendReady(true);
       }
     };
     
