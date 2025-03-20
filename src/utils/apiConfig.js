@@ -4,12 +4,11 @@ const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
     // If your backend is separately deployed, set this environment variable
     if (process.env.REACT_APP_API_URL) {
+      console.log('Using configured API URL:', process.env.REACT_APP_API_URL);
       return process.env.REACT_APP_API_URL;
     }
     
-    // Use window.location.origin which includes protocol, hostname, and port
-    // This works better than manually constructing the URL
-    console.log('Using current origin as API path in production:', window.location.origin);
+    console.log('Using origin for API in production:', window.location.origin);
     return window.location.origin;
   }
   
@@ -28,15 +27,20 @@ const getApiBaseUrl = () => {
 
 // Create a function to get the socket URL for Socket.io
 const getSocketUrl = () => {
-  // For production, use the same url determination as API
+  // For production, create a websocket URL from the current location
   if (process.env.NODE_ENV === 'production') {
     if (process.env.REACT_APP_SOCKET_URL) {
+      console.log('Using configured socket URL:', process.env.REACT_APP_SOCKET_URL);
       return process.env.REACT_APP_SOCKET_URL;
     }
     
-    // In production, we use the same origin for socket connections
-    console.log('Using current origin for socket in production:', window.location.origin);
-    return window.location.origin;
+    // Use the same origin for socket connections, 
+    // but ensure we're using the proper protocol (wss for https)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${window.location.origin}`.replace(/^http/, 'ws');
+    
+    console.log('Created WebSocket URL for production:', wsUrl);
+    return window.location.origin; // Socket.io client will handle the protocol
   }
   
   // For development, use the API base URL

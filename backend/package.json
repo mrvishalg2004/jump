@@ -1,7 +1,7 @@
 {
   "name": "treasure-hunt-backend",
   "version": "1.0.0",
-  "description": "Backend for the treasure hunt game",
+  "description": "Backend for Treasure Hunt Game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,9 +11,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.3",
-    "portfinder": "^1.0.35",
-    "socket.io": "^4.6.1"
+    "socket.io": "^4.6.1",
+    "portfinder": "^1.0.32"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

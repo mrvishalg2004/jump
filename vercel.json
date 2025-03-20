@@ -10,15 +10,14 @@
       } 
     }
   ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "backend/server.js" },
-    { "src": "/socket.io", "dest": "backend/server.js" },
-    { "src": "/socket.io/(.*)", "dest": "backend/server.js" },
-    { "src": "/socket-check", "dest": "backend/server.js" },
-    { "src": "/health", "dest": "backend/server.js" },
-    { "src": "/current-port.txt", "dest": "backend/server.js" },
-    { "src": "^/static/(.*)", "dest": "/static/$1" },
-    { "src": ".*", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/server.js" },
+    { "source": "/socket.io", "destination": "/backend/server.js" },
+    { "source": "/socket.io/(.*)", "destination": "/backend/server.js" },
+    { "source": "/socket-check", "destination": "/backend/server.js" },
+    { "source": "/health", "destination": "/backend/server.js" },
+    { "source": "/current-port.txt", "destination": "/backend/server.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "env": {
     "CI": "false",

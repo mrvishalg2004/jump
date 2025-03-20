@@ -124,15 +124,17 @@ const Admin = () => {
     }
   }, [authenticated, fetchPlayers]);
 
-  // Connect to socket.io server
+  // Update the useEffect for socket connection
   useEffect(() => {
+    if (!authenticated) return;
+
     // Set up socket connection
     const socketUrl = getSocketUrl();
     console.log('Admin connecting to socket server at:', socketUrl);
     
     const newSocket = io(socketUrl, {
       reconnection: true,
-      reconnectionAttempts: Infinity, // Keep trying to reconnect
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
@@ -141,58 +143,13 @@ const Admin = () => {
       upgrade: true,
       forceNew: true,
       autoConnect: true,
-      withCredentials: true
+      withCredentials: true,
+      extraHeaders: {
+        Authorization: `Bearer ${localStorage.getItem('adminToken') || ''}`
+      }
     });
     
     setSocket(newSocket);
-    
-    // Attempt to check socket.io endpoint availability
-    const checkSocketEndpoint = async () => {
-      try {
-        const apiUrl = getApiBaseUrl();
-        console.log('Checking socket endpoint at:', `${apiUrl}/socket-check`);
-        
-        // First try the health endpoint
-        const healthResponse = await axios.get(`${apiUrl}/health`, {
-          timeout: 5000,
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        console.log('Health check response:', healthResponse.data);
-        
-        if (healthResponse.data.status === 'ok') {
-          // Then check the socket endpoint
-          const socketResponse = await axios.get(`${apiUrl}/socket-check`, {
-            timeout: 5000,
-            headers: {
-              'Cache-Control': 'no-cache'
-            }
-          });
-          
-          console.log('Socket check endpoint response:', socketResponse.data);
-          
-          if (socketResponse.data && socketResponse.data.socketAvailable) {
-            console.log('Socket server confirmed available via REST endpoint');
-            setConnectionError(null);
-            return true;
-          }
-        }
-        
-        throw new Error('Socket server health check failed');
-      } catch (error) {
-        console.error('Failed to check socket endpoint:', error);
-        setConnectionError('Socket server health check failed. Check server logs.');
-        return false;
-      }
-    };
-    
-    // Initial health check
-    checkSocketEndpoint();
-    
-    // Set up periodic health checks
-    const healthCheckInterval = setInterval(checkSocketEndpoint, 30000);
     
     // Log socket connection events
     newSocket.on('connect', () => {
@@ -209,7 +166,7 @@ const Admin = () => {
     });
     
     newSocket.on('connect_error', (err) => {
-      console.error('Socket connection error:', err);
+      console.error('Socket connection error:', err.message);
       setSocketConnected(false);
       setConnectionError(`Connection error: ${err.message}`);
       
@@ -220,36 +177,6 @@ const Admin = () => {
           newSocket.connect();
         }
       }, 5000);
-    });
-    
-    newSocket.on('connect_timeout', () => {
-      console.error('Socket connection timeout');
-      setSocketConnected(false);
-      setConnectionError('Connection timed out');
-    });
-    
-    newSocket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
-      setSocketConnected(false);
-      if (reason === 'io server disconnect') {
-        // The server has forcefully disconnected the connection
-        setConnectionError('Disconnected by server. Please refresh the page.');
-      } else {
-        setConnectionError('Connection lost. Attempting to reconnect...');
-        // The socket will automatically try to reconnect
-      }
-    });
-    
-    newSocket.on('reconnect', (attemptNumber) => {
-      console.log(`Socket reconnected after ${attemptNumber} attempts`);
-      setSocketConnected(true);
-      setConnectionError(null);
-      
-      // Re-join admin room after reconnection
-      newSocket.emit('joinAdminRoom', { adminId: 'admin-dashboard' });
-      
-      // Request fresh player data
-      newSocket.emit('getPlayerData');
     });
     
     // Listen for player updates
@@ -298,13 +225,14 @@ const Admin = () => {
       }));
     });
 
+    // Clear up on unmount
     return () => {
-      clearInterval(healthCheckInterval);
       if (newSocket) {
+        console.log('Disconnecting socket on cleanup');
         newSocket.disconnect();
       }
     };
-  }, [authenticated, fetchPlayers]);
+  }, [authenticated]);
 
   // Listen for socket events to update player list in real-time
   useEffect(() => {
@@ -879,6 +807,18 @@ const Admin = () => {
     }
   };
   
+  // Add this function to manually reconnect the socket
+  const manualReconnect = () => {
+    if (socket) {
+      console.log('Manually reconnecting socket...');
+      socket.disconnect();
+      socket.connect();
+    } else {
+      // If socket doesn't exist, refresh the page
+      window.location.reload();
+    }
+  };
+  
   // If not authenticated, show login form
   if (!authenticated) {
     return (
@@ -1036,14 +976,7 @@ const Admin = () => {
             </span>
             {!socketConnected && (
               <button 
-                onClick={() => {
-                  // Attempt to reconnect manually
-                  if (socket) {
-                    socket.connect();
-                  } else {
-                    window.location.reload();
-                  }
-                }}
+                onClick={manualReconnect}
                 style={{
                   padding: '5px 10px',
                   backgroundColor: '#007bff',

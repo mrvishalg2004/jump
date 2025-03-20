@@ -36,15 +36,15 @@ const io = socketIo(server, {
     origin: "*", // Allow all origins in production
     methods: ["GET", "POST"],
     credentials: true,
-    transports: ['websocket', 'polling'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    transports: ['websocket', 'polling']
   },
   path: '/socket.io',
   allowEIO3: true,
   pingTimeout: 60000,
   pingInterval: 25000,
   connectTimeout: 45000,
-  maxHttpBufferSize: 1e8
+  maxHttpBufferSize: 1e8,
+  transports: ['websocket', 'polling']
 });
 
 // Make io available globally
@@ -128,15 +128,41 @@ console.log('Connecting to MongoDB...');
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 10000, // Increase timeout
   retryWrites: true
 })
-.then(() => console.log('MongoDB Connected Successfully'))
+.then(() => {
+  console.log('MongoDB Connected Successfully');
+  
+  // Log connection details for debugging
+  console.log('MongoDB connection state:', mongoose.connection.readyState);
+  console.log('MongoDB connection host:', mongoose.connection.host);
+  console.log('MongoDB connection port:', mongoose.connection.port);
+})
 .catch(err => {
   console.error('MongoDB Connection Error:', err);
+  
   // Don't exit process on connection error in production
   if (!process.env.VERCEL_ENV) {
+    console.error('Exiting due to MongoDB connection failure (in development)');
     process.exit(1);
+  } else {
+    console.error('Continuing despite MongoDB connection failure (in production)');
+    
+    // Setup basic mock data for testing without DB
+    global.mockDB = {
+      players: [],
+      settings: { activeRound: 0 }
+    };
+    
+    // Add a middleware to inform about DB issues
+    app.use((req, res, next) => {
+      // Only add warning for API routes
+      if (req.path.startsWith('/api/')) {
+        console.warn(`Request to ${req.path} with disconnected DB`);
+      }
+      next();
+    });
   }
 });
 
@@ -340,4 +366,15 @@ const startServer = async () => {
 startServer();
 
 // Export app for testing
-module.exports.app = app; 
+module.exports.app = app;
+
+// Add a utility function for error handling and debugging
+function logError(context, error) {
+  console.error(`[ERROR] ${context}:`, error);
+  console.error(`Stack trace: ${error.stack}`);
+}
+
+// Handle socket.io errors
+io.engine.on('connection_error', (err) => {
+  logError('Socket.io connection error', err);
+}); 
