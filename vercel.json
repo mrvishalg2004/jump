@@ -1,14 +1,11 @@
 {
   "version": 2,
+  "framework": "create-react-app",
+  "buildCommand": "npm run build",
+  "devCommand": "npm start",
+  "outputDirectory": "build",
   "builds": [
-    { "src": "backend/server.js", "use": "@vercel/node" },
-    { 
-      "src": "package.json", 
-      "use": "@vercel/static-build", 
-      "config": { 
-        "distDir": "build"
-      } 
-    }
+    { "src": "backend/server.js", "use": "@vercel/node" }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/backend/server.js" },
@@ -16,8 +13,7 @@
     { "source": "/socket.io/(.*)", "destination": "/backend/server.js" },
     { "source": "/socket-check", "destination": "/backend/server.js" },
     { "source": "/health", "destination": "/backend/server.js" },
-    { "source": "/current-port.txt", "destination": "/backend/server.js" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/current-port.txt", "destination": "/backend/server.js" }
   ],
   "env": {
     "CI": "false",

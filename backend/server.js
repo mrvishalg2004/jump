@@ -122,62 +122,86 @@ app.get('/current-port.txt', (req, res) => {
 });
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/treasure-hunt';
-console.log('Connecting to MongoDB...');
+let isMongoConnected = false;
 
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 10000, // Increase timeout
-  retryWrites: true
-})
-.then(() => {
-  console.log('MongoDB Connected Successfully');
-  
-  // Log connection details for debugging
-  console.log('MongoDB connection state:', mongoose.connection.readyState);
-  console.log('MongoDB connection host:', mongoose.connection.host);
-  console.log('MongoDB connection port:', mongoose.connection.port);
-})
-.catch(err => {
-  console.error('MongoDB Connection Error:', err);
-  
-  // Don't exit process on connection error in production
-  if (!process.env.VERCEL_ENV) {
-    console.error('Exiting due to MongoDB connection failure (in development)');
-    process.exit(1);
-  } else {
-    console.error('Continuing despite MongoDB connection failure (in production)');
+// Create a function for MongoDB connection to handle reconnection
+const connectToMongoDB = async () => {
+  try {
+    if (isMongoConnected) {
+      console.log('MongoDB already connected, skipping connection');
+      return;
+    }
     
-    // Setup basic mock data for testing without DB
-    global.mockDB = {
-      players: [],
-      settings: { activeRound: 0 }
-    };
+    const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/treasure-hunt';
+    console.log('Connecting to MongoDB...');
     
-    // Add a middleware to inform about DB issues
-    app.use((req, res, next) => {
-      // Only add warning for API routes
-      if (req.path.startsWith('/api/')) {
-        console.warn(`Request to ${req.path} with disconnected DB`);
-      }
-      next();
+    await mongoose.connect(MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000, // Increase timeout
+      retryWrites: true,
+      connectTimeoutMS: 30000, // 30 seconds timeout
+      keepAlive: true
     });
+    
+    console.log('MongoDB Connected Successfully');
+    isMongoConnected = true;
+    
+    // Log connection details for debugging
+    console.log('MongoDB connection state:', mongoose.connection.readyState);
+    console.log('MongoDB connection host:', mongoose.connection.host);
+    console.log('MongoDB connection port:', mongoose.connection.port);
+    
+    // Handle connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+      isMongoConnected = false;
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+      isMongoConnected = false;
+      
+      // Try to reconnect after a delay
+      setTimeout(() => {
+        if (!isMongoConnected) {
+          console.log('Attempting to reconnect to MongoDB...');
+          connectToMongoDB();
+        }
+      }, 5000);
+    });
+    
+  } catch (err) {
+    console.error('MongoDB Connection Error:', err);
+    isMongoConnected = false;
+    
+    // Don't exit process on connection error in production
+    if (!process.env.VERCEL_ENV) {
+      console.error('Exiting due to MongoDB connection failure (in development)');
+      process.exit(1);
+    } else {
+      console.error('Continuing despite MongoDB connection failure (in production)');
+      
+      // Setup basic mock data for testing without DB
+      global.mockDB = {
+        players: [],
+        settings: { activeRound: 0 }
+      };
+      
+      // Add a middleware to inform about DB issues
+      app.use((req, res, next) => {
+        // Only add warning for API routes
+        if (req.path.startsWith('/api/')) {
+          console.warn(`Request to ${req.path} with disconnected DB`);
+        }
+        next();
+      });
+    }
   }
-});
+};
 
-// Handle connection events
-mongoose.connection.on('error', err => {
-  console.error('MongoDB connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected, attempting to reconnect...');
-});
-
-mongoose.connection.on('reconnected', () => {
-  console.log('MongoDB reconnected successfully');
-});
+// Connect to MongoDB
+connectToMongoDB();
 
 // Routes
 const playerRoutes = require('./routes/playerRoutes');
