@@ -20,6 +20,7 @@ import { PlayerProvider } from "./context/PlayerContext"
 // Import decoy pages
 import DecoyPage from "./components/treasureHunt/DecoyPage"
 import React from 'react';
+import ErrorBoundary from './ErrorBoundary'
 
 function App() {
   const [isBackendReady, setIsBackendReady] = useState(false);
@@ -61,7 +62,7 @@ function App() {
   }
   
   return (
-    <>
+    <ErrorBoundary>
       <PlayerProvider>
         <Router basename="/">
           <Header />
@@ -92,18 +93,19 @@ function App() {
             <Route exact path='/roundtwo-uvwxyz9876543210' component={Round2} />
             <Route exact path='/roundtwo-qwert678yuiop234' component={Round2} />
             <Route exact path='/admin' component={Admin} />
-            <Route exact path='/treasureHunt/admin' component={Admin} />
-            {/* Decoy Routes */}
-            <Route exact path='/decoy/page1' render={() => <DecoyPage pageNumber={1} />} />
-            <Route exact path='/decoy/page2' render={() => <DecoyPage pageNumber={2} />} />
-            <Route exact path='/decoy/page3' render={() => <DecoyPage pageNumber={3} />} />
-            <Route exact path='/decoy/page4' render={() => <DecoyPage pageNumber={4} />} />
-            <Route exact path='/decoy/page5' render={() => <DecoyPage pageNumber={5} />} />
-            <Route exact path='/decoy/clue1' render={() => <DecoyPage pageNumber={6} clue />} />
-            <Route exact path='/decoy/clue2' render={() => <DecoyPage pageNumber={7} clue />} />
-            <Route exact path='/decoy/clue3' render={() => <DecoyPage pageNumber={8} clue />} />
-            <Route exact path='/decoy/hint1' render={() => <DecoyPage pageNumber={9} hint />} />
-            <Route exact path='/decoy/hint2' render={() => <DecoyPage pageNumber={10} hint />} />
+            
+            {/* Treasure Hunt Decoy Routes */}
+            <Route exact path='/page/search-results' component={DecoyPage} />
+            <Route exact path='/congratulations/winner' component={DecoyPage} />
+            <Route exact path='/admin/login' component={DecoyPage} />
+            <Route exact path='/treasure/map' component={DecoyPage} />
+            <Route exact path='/hint/clue' component={DecoyPage} />
+            <Route exact path='/secret/code' component={DecoyPage} />
+            <Route exact path='/round2-registration' component={DecoyPage} />
+            <Route exact path='/winners/circle' component={DecoyPage} />
+            <Route exact path='/hidden/treasure' component={DecoyPage} />
+            <Route exact path='/clue/challenge' component={DecoyPage} />
+            <Route exact path='/qualification/confirmed' component={DecoyPage} />
           </Switch>
           {/* Visible Links for Easier Access */}
           <div style={{ padding: '20px', backgroundColor: '#f9f9f9', border: '1px solid #ddd' }}>
@@ -128,9 +130,8 @@ function App() {
           <Footer />
         </Router>
       </PlayerProvider>
-    </>
+    </ErrorBoundary>
   )
-
 }
 
 export default App

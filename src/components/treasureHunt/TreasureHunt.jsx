@@ -89,7 +89,10 @@ const TreasureHunt = () => {
       
       try {
         // Check if the game is active
-        const response = await axios.get(`${API_BASE_URL}/api/players/game-state`, {
+        const endpoint = getApiEndpoint('/api/players/game-state');
+        console.log(`Checking game state at: ${endpoint}`);
+        
+        const response = await axios.get(endpoint, {
           timeout: 5000
         });
         
@@ -168,7 +171,8 @@ const TreasureHunt = () => {
     
     // Track the wrong click in the backend
     try {
-      await axios.post(`${API_BASE_URL}/api/players/track-link-click`, {
+      const endpoint = getApiEndpoint('/api/players/track-link-click');
+      await axios.post(endpoint, {
         playerId,
         linkId: linkId || 'unknown-link',
         isCorrect: false
@@ -214,7 +218,8 @@ const TreasureHunt = () => {
       // Show immediate congratulatory message
       setShowCongratulations(true);
       
-      const response = await axios.post(`${API_BASE_URL}/api/players/submit-link`, {
+      const endpoint = getApiEndpoint('/api/players/submit-link');
+      const response = await axios.post(endpoint, {
         playerId,
         clickedLink: '/treasureHunt/round2',
         timeTaken
@@ -269,7 +274,8 @@ const TreasureHunt = () => {
   const handleLinkSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/validate-link`, { link: inputLink });
+      const endpoint = getApiEndpoint('/api/validate-link');
+      const response = await axios.post(endpoint, { link: inputLink });
       if (response.data.success) {
         setToken(response.data.token);
         alert('Correct link! Use this token in the URL: ' + response.data.token);
@@ -350,7 +356,11 @@ const TreasureHunt = () => {
           username
         });
         
-        // ... rest of function remains the same
+        // Handle the response
+        if (response.data && response.data.success) {
+          console.log('Progress check successful:', response.data);
+          // Add any state updates needed based on the response
+        }
       } catch (error) {
         console.error('Error checking real link status:', error);
       }
@@ -484,7 +494,18 @@ const TreasureHunt = () => {
           word
         });
         
-        // ... rest of function remains the same
+        // Handle the response
+        if (response.data && response.data.success) {
+          console.log('Found link successfully reported:', response.data);
+          // Show congratulations and potentially redirect
+          setShowCongratulations(true);
+          setTimeout(() => {
+            history.push('/round2');
+          }, 3000);
+        } else {
+          setShowFindingMessage(false);
+          console.error('Server returned error:', response.data);
+        }
       } catch (error) {
         console.error('Error reporting found link:', error);
         setShowFindingMessage(false);
