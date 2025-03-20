@@ -24,13 +24,13 @@ const getApiBaseUrl = () => {
   // For development, try to get the port from localStorage
   try {
     // Try to read the port from localStorage (set by other components)
-    const savedPort = localStorage.getItem('apiPort') || '5000';
+    const savedPort = localStorage.getItem('apiPort') || '5001';
     console.log(`Using API port: ${savedPort}`);
     return `http://localhost:${savedPort}`;
   } catch (error) {
     console.error('Error getting API port:', error);
-    // Default to port 5000 if we can't read the saved port
-    return 'http://localhost:5000';
+    // Default to port 5001 if we can't read the saved port
+    return 'http://localhost:5001';
   }
 };
 

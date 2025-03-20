@@ -434,7 +434,7 @@ const Home = () => {
           try {
             console.log('Trying alternative port...');
             const currentPort = parseInt(API_BASE_URL.split(':')[2]);
-            const altPort = currentPort === 5000 ? 5008 : 5000; // Try alternate common port
+            const altPort = currentPort === 5001 ? 5000 : 5001; // Try alternate port
             
             const altApiUrl = `http://localhost:${altPort}/api/players/register`;
             console.log(`Trying alternative registration endpoint: ${altApiUrl}`);

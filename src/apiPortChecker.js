@@ -3,8 +3,8 @@ import axios from 'axios';
 // Function to check various ports and find the one where the backend is running
 const checkBackendPort = async () => {
   // Ports to try, in order of preference
-  // Start with port 5005 since that's what's in current-port.txt
-  const portsToTry = [5005, 5000, 5001, 5002, 5003, 5004, 5006, 5007, 5008, 5009];
+  // Start with port 5001 since that's what the backend is running on
+  const portsToTry = [5001, 5000, 5002, 5003, 5004, 5005, 5006, 5007, 5008, 5009];
   let foundPort = null;
   
   console.log('Checking for backend server on available ports...');
@@ -15,7 +15,7 @@ const checkBackendPort = async () => {
     try {
       // Try the saved port first
       console.log(`Trying saved port ${savedPort}...`);
-      const response = await axios.get(`http://localhost:${savedPort}`, { 
+      const response = await axios.get(`http://localhost:${savedPort}/api/players/game-state`, { 
         timeout: 2000 // Longer timeout for more reliable connection
       });
       
@@ -34,7 +34,7 @@ const checkBackendPort = async () => {
     try {
       // Try to connect to the backend on this port
       console.log(`Trying port ${port}...`);
-      const response = await axios.get(`http://localhost:${port}`, { 
+      const response = await axios.get(`http://localhost:${port}/api/players/game-state`, { 
         timeout: 2000 // Longer timeout for more reliable detection
       });
       
@@ -55,10 +55,10 @@ const checkBackendPort = async () => {
     return foundPort;
   }
   
-  // If we couldn't find the backend on any port, use port 5005 as default
-  console.log('Could not find backend on any port, using default port 5005');
-  localStorage.setItem('apiPort', '5005');
-  return 5005;
+  // If we couldn't find the backend on any port, use port 5001 as default
+  console.log('Could not find backend on any port, using default port 5001');
+  localStorage.setItem('apiPort', '5001');
+  return 5001;
 };
 
 export default checkBackendPort; 
