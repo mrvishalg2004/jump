@@ -118,17 +118,40 @@ const Admin = () => {
     
     const newSocket = io(socketUrl, {
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
+      timeout: 10000,
       path: '/socket.io',
-      transports: ['websocket', 'polling'] // Explicitly specify transports
+      transports: ['websocket', 'polling'],
+      upgrade: true
     });
     
     setSocket(newSocket);
     
+    // Attempt to check socket.io endpoint availability
+    const checkSocketEndpoint = async () => {
+      try {
+        const apiUrl = getApiBaseUrl();
+        console.log('Checking socket endpoint at:', `${apiUrl}/socket-check`);
+        const response = await axios.get(`${apiUrl}/socket-check`, {
+          timeout: 5000
+        });
+        console.log('Socket check endpoint response:', response.data);
+        
+        if (response.data && response.data.socketAvailable) {
+          console.log('Socket server confirmed available via REST endpoint');
+        }
+      } catch (error) {
+        console.error('Failed to check socket endpoint:', error);
+        setConnectionError('Socket server health check failed. Check server logs.');
+      }
+    };
+    
+    checkSocketEndpoint();
+    
     // Log socket connection events
     newSocket.on('connect', () => {
-      console.log('Admin socket connected successfully');
+      console.log('Admin socket connected successfully with ID:', newSocket.id);
       setSocketConnected(true);
       setConnectionError(null);
       

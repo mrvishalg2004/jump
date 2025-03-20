@@ -14,6 +14,10 @@ console.log('Starting server...');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('VERCEL_ENV:', process.env.VERCEL_ENV);
 
+// Handle Vercel serverless functions
+const isVercel = process.env.VERCEL || false;
+console.log('Is running on Vercel:', isVercel);
+
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
@@ -176,9 +180,17 @@ io.on('connection', (socket) => {
   });
 });
 
-// Root route
+// Special route for Vercel deployment health check
 app.get('/', (req, res) => {
-  res.send('Treasure Hunt API is running');
+  res.status(200).send('Treasure Hunt API is running!');
+});
+
+// Special route for checking if socket.io is available
+app.get('/socket-check', (req, res) => {
+  res.status(200).json({ 
+    socketAvailable: true,
+    message: 'Socket.IO server is running'
+  });
 });
 
 // Catch-all route for debugging missing endpoints
