@@ -8,7 +8,7 @@ import TextWithHiddenLinks from './TextWithHiddenLinks';
 import './TextWithHiddenLinks.css';
 import HiddenLink from './HiddenLink';
 import { getPageLinks } from '../../utils/linkHider';
-import { getApiBaseUrl, getSocketUrl } from '../../utils/apiConfig';
+import { getApiBaseUrl, getSocketUrl, getApiEndpoint } from '../../utils/apiConfig';
 
 const API_BASE_URL = getApiBaseUrl();
 console.log('TreasureHunt using API Base URL:', API_BASE_URL);
@@ -333,6 +333,30 @@ const TreasureHunt = () => {
     }
   }, [gameActive]);
 
+  // Update useEffect for checkRealLink function
+  useEffect(() => {
+    // Function to check if the real link was clicked
+    const checkRealLink = async () => {
+      try {
+        if (!playerId || !username) return;
+        
+        const endpoint = getApiEndpoint('/api/players/check-progress');
+        console.log(`Checking player progress at: ${endpoint}`);
+        
+        const response = await axios.post(endpoint, {
+          playerId,
+          username
+        });
+        
+        // ... rest of function remains the same
+      } catch (error) {
+        console.error('Error checking real link status:', error);
+      }
+    };
+    
+    checkRealLink();
+  }, [playerId, username]);
+
   // If loading, show loading message
   if (loading) {
     return (
@@ -437,6 +461,34 @@ const TreasureHunt = () => {
         </button>
       </div>
     );
+  };
+
+  // Update the handleLinkClick function
+  const handleLinkClick = async (isRealLink, page, word) => {
+    console.log(`Link clicked - Real: ${isRealLink}, Page: ${page}, Word: ${word}`);
+    
+    if (isRealLink) {
+      try {
+        // Immediately show finding message
+        setShowFindingMessage(true);
+        
+        const endpoint = getApiEndpoint('/api/players/found-link');
+        console.log(`Reporting found link at: ${endpoint}`);
+        
+        const response = await axios.post(endpoint, {
+          playerId,
+          username,
+          page,
+          word
+        });
+        
+        // ... rest of function remains the same
+      } catch (error) {
+        console.error('Error reporting found link:', error);
+        setShowFindingMessage(false);
+        setShowErrorMessage(true);
+      }
+    }
   };
 
   return (

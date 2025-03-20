@@ -382,10 +382,17 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Modify the server export for Vercel
+module.exports = {
+  app,
+  server,
+  io
+};
 
-// Export app for testing
-module.exports.app = app;
+// Start the server if not in serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  startServer();
+}
 
 // Add a utility function for error handling and debugging
 function logError(context, error) {

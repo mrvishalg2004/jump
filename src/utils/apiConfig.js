@@ -8,6 +8,7 @@ const getApiBaseUrl = () => {
       return process.env.REACT_APP_API_URL;
     }
     
+    // Use the same domain for API requests in production
     console.log('Using origin for API in production:', window.location.origin);
     return window.location.origin;
   }
@@ -34,17 +35,30 @@ const getSocketUrl = () => {
       return process.env.REACT_APP_SOCKET_URL;
     }
     
-    // Use the same origin for socket connections, 
-    // but ensure we're using the proper protocol (wss for https)
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${window.location.origin}`.replace(/^http/, 'ws');
-    
-    console.log('Created WebSocket URL for production:', wsUrl);
-    return window.location.origin; // Socket.io client will handle the protocol
+    // In production on Vercel, use the same origin for socket
+    console.log('Using origin for Socket.IO in production:', window.location.origin);
+    return window.location.origin;
   }
   
   // For development, use the API base URL
   return getApiBaseUrl();
 };
 
-export { getApiBaseUrl, getSocketUrl }; 
+// Helper function to get the API endpoint for Vercel compatibility
+const getApiEndpoint = (endpoint) => {
+  const baseUrl = getApiBaseUrl();
+  
+  // Make sure endpoint starts with /
+  if (!endpoint.startsWith('/')) {
+    endpoint = '/' + endpoint;
+  }
+  
+  // For Vercel, ensure API routes are properly prefixed
+  if (process.env.NODE_ENV === 'production' && !endpoint.startsWith('/api/') && endpoint !== '/socket.io') {
+    return `${baseUrl}/api${endpoint}`;
+  }
+  
+  return `${baseUrl}${endpoint}`;
+};
+
+export { getApiBaseUrl, getSocketUrl, getApiEndpoint }; 

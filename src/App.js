@@ -63,7 +63,7 @@ function App() {
   return (
     <>
       <PlayerProvider>
-        <Router>
+        <Router basename="/">
           <Header />
           <Switch>
             <Route exact path='/' component={Home} />

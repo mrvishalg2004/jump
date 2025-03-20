@@ -3,7 +3,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import './Admin.css';
 import { generateHash, getLinkLocations, getDecoyDestinations } from '../../utils/linkHider';
-import { getApiBaseUrl, getSocketUrl } from '../../utils/apiConfig';
+import { getApiBaseUrl, getSocketUrl, getApiEndpoint } from '../../utils/apiConfig';
 
 // Use the utility function for API base URL
 const API_BASE_URL = getApiBaseUrl();
@@ -35,7 +35,8 @@ const Admin = () => {
     try {
       setError(''); // Clear any previous errors
       
-      console.log(`Fetching players from: ${API_BASE_URL}/api/players/admin/players`);
+      const endpoint = getApiEndpoint('/api/players/admin/players');
+      console.log(`Fetching players from: ${endpoint}`);
       
       // Set up authentication header if available
       const headers = {};
@@ -44,7 +45,7 @@ const Admin = () => {
         headers['Authorization'] = `Bearer ${adminToken}`;
       }
       
-      const response = await axios.get(`${API_BASE_URL}/api/players/admin/players`, {
+      const response = await axios.get(endpoint, {
         timeout: 10000, // Increase timeout for more reliable connection
         headers
       });
@@ -300,8 +301,13 @@ const Admin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      console.log('Attempting admin login');
-      const response = await axios.post(`${API_BASE_URL}/api/players/admin/login`, {
+      setError('');
+      setLoading(true);
+      
+      const endpoint = getApiEndpoint('/api/players/admin/login');
+      console.log(`Logging in to: ${endpoint}`);
+      
+      const response = await axios.post(endpoint, {
         email,
         password
       });
@@ -325,6 +331,8 @@ const Admin = () => {
     } catch (error) {
       console.error('Login error:', error);
       setError('Login failed: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -500,14 +508,9 @@ const Admin = () => {
       try {
         setError('');
         console.log(`Manually qualifying player: ${player.username} (${player.playerId})`);
-        console.log(`Using API Base URL: ${API_BASE_URL}`);
         
-        // Force refresh the API_BASE_URL to ensure we have the latest port
-        const refreshedBaseUrl = getApiBaseUrl();
-        console.log('Refreshed API Base URL:', refreshedBaseUrl);
-        
-        // First try: use the simple-qualify endpoint
-        let qualifyUrl = `${refreshedBaseUrl}/api/players/simple-qualify`;
+        // Use getApiEndpoint for correct URL formation
+        let qualifyUrl = getApiEndpoint('/api/players/simple-qualify');
         console.log('Using qualification endpoint:', qualifyUrl);
         
         // Log the request payload
@@ -546,7 +549,7 @@ const Admin = () => {
           // Try direct-qualify as fallback
           try {
             console.log('Attempting direct-qualify fallback...');
-            qualifyUrl = `${refreshedBaseUrl}/api/players/direct-qualify`;
+            qualifyUrl = getApiEndpoint('/api/players/direct-qualify');
             console.log(`Making fallback request to: ${qualifyUrl}`);
             
             const fallbackResponse = await axios.post(qualifyUrl, payload, {
@@ -572,7 +575,7 @@ const Admin = () => {
             // Try one last attempt: create a qualified player directly via admin API
             try {
               console.log('Attempting final method: admin update-status...');
-              const adminUrl = `${refreshedBaseUrl}/api/players/update-status`;
+              const adminUrl = getApiEndpoint('/api/players/update-status');
               
               const adminResponse = await axios.post(adminUrl, {
                 playerId: player.playerId,
