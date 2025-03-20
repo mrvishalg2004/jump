@@ -10,7 +10,7 @@
     { "src": "/socket-check", "dest": "/backend/server.js" },
     { "src": "/health", "dest": "/backend/server.js" },
     { "src": "/current-port.txt", "dest": "/backend/server.js" },
-    { "src": "/(.*\\.(js|json|css|ico|png|jpg|svg|ttf|woff|woff2)$)", "dest": "/$1" },
+    { "src": "/(.*\\.(js|json|css|ico|png|jpg|jpeg|gif|svg|ttf|woff|woff2)$)", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "env": {
@@ -24,10 +24,22 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "s-maxage=1, stale-while-revalidate" },
+        { "key": "Cache-Control", "value": "s-maxage=1, stale-while-revalidate=59" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.js$",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.css$",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ]

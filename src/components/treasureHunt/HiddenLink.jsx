@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
-import { trackLinkClick } from '../../utils/linkHider';
-import './HiddenLink.css';
+import React from 'react';
 
 /**
  * HiddenLink Component
@@ -20,239 +17,69 @@ import './HiddenLink.css';
  * - 'button': Hidden in a button
  * - 'hidden': Completely invisible
  */
-const HiddenLink = ({ 
-  linkData, 
-  playerId, 
-  children, 
-  className = '', 
-  style = {},
-  variant = 'text', // 'text', 'icon', 'image', 'logo', 'button', 'hidden'
-  imageProps = {}, // For image variant: src, alt, width, height
-  iconName = '🔍', // For icon variant
-  buttonText = 'Click Me' // For button variant
+const HiddenLink = ({
+  linkData = {},
+  playerId = '',
+  variant = 'text',
+  buttonText = 'Click Me',
+  className = '',
+  onWrongClick = () => {},
+  onCorrectClick = () => {},
+  children
 }) => {
-  const history = useHistory();
-  const [clicked, setClicked] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const [pulseEffect, setPulseEffect] = useState(false);
+  const isRealLink = linkData.isReal || false;
   
-  // Check if link is visible before rendering
-  const isVisible = linkData && linkData.visible;
-  
-  // Add a subtle pulse effect every 30 seconds to help players notice the link
-  useEffect(() => {
-    // Only run the effect if the link is visible
-    if (!isVisible) {
-      return () => {}; // Return empty cleanup function when link is not visible
-    }
-    
-    const pulseInterval = setInterval(() => {
-      setPulseEffect(true);
-      setTimeout(() => setPulseEffect(false), 2000);
-    }, 30000);
-    
-    // Trigger an initial pulse after 5 seconds
-    const initialPulseTimeout = setTimeout(() => {
-      setPulseEffect(true);
-      setTimeout(() => setPulseEffect(false), 2000);
-    }, 5000);
-    
-    return () => {
-      clearInterval(pulseInterval);
-      clearTimeout(initialPulseTimeout);
-    };
-  }, [isVisible]); // Only depend on isVisible, not the entire linkData object
-  
-  // If no link data or not visible, render nothing or children
-  if (!isVisible) {
-    return children || null;
+  // Determine base class based on variant
+  let baseClass = '';
+  if (variant === 'text') {
+    baseClass = 'hidden-text-link';
+  } else if (variant === 'button') {
+    baseClass = 'hidden-button-link';
+  } else if (variant === 'image') {
+    baseClass = 'hidden-image-link';
   }
   
-  const handleClick = async (e) => {
+  // Add real or decoy class
+  const linkClass = `${baseClass} ${isRealLink ? 'real' : 'decoy'} ${className}`.trim();
+  
+  // Create a safe href
+  const href = isRealLink ? '#treasure-found' : '#decoy-link';
+  
+  // Handle the click event
+  const handleClick = (e) => {
     e.preventDefault();
     
-    // Track the click for admin analytics
-    if (playerId && linkData.linkId) {
-      try {
-        const response = await trackLinkClick(linkData.linkId, playerId);
-        
-        // Handle qualification response
-        if (response.success && response.isRealLink) {
-          // Show qualification message
-          alert(response.qualificationMessage);
-          
-          // If qualified, redirect to round 2 page
-          if (response.qualified) {
-            setClicked(true);
-            setTimeout(() => {
-              history.push('/treasure-hunt/round2');
-            }, 1000);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Error tracking link click:', error);
+    try {
+      if (isRealLink) {
+        onCorrectClick(e);
+      } else {
+        onWrongClick(e);
       }
+    } catch (error) {
+      console.error('Error in HiddenLink click handler:', error);
     }
-    
-    setClicked(true);
-    
-    // Navigate to the destination after a short delay
-    setTimeout(() => {
-      if (linkData.destination) {
-        history.push(linkData.destination);
-      }
-    }, 300);
   };
   
-  // Determine the content based on the variant
-  let content;
-  switch (variant) {
-    case 'icon':
-      content = (
-        <span 
-          className={`hidden-link-icon ${clicked ? 'clicked' : ''} ${hovered ? 'hovered' : ''} ${pulseEffect ? 'pulse' : ''}`}
-          title="Hidden Treasure"
-          role="img"
-          aria-label="Hidden treasure link icon"
-        >
-          {iconName}
-        </span>
-      );
-      break;
-    case 'image':
-      content = (
-        <img 
-          src={imageProps.src || '/images/default.jpg'} 
-          alt={imageProps.alt || 'Hidden treasure'} 
-          width={imageProps.width} 
-          height={imageProps.height}
-          className={`hidden-link-image ${clicked ? 'clicked' : ''} ${hovered ? 'hovered' : ''} ${pulseEffect ? 'pulse' : ''}`}
-          title="Hidden Treasure"
-        />
-      );
-      break;
-    case 'logo':
-      content = (
-        <div 
-          className={`hidden-link-logo ${clicked ? 'clicked' : ''} ${hovered ? 'hovered' : ''} ${pulseEffect ? 'pulse' : ''}`}
-          title="Hidden Treasure"
-        >
-          {children || <img src="/images/logo.png" alt="Logo" />}
-        </div>
-      );
-      break;
-    case 'button':
-      content = (
-        <button 
-          className={`hidden-link-button ${clicked ? 'clicked' : ''} ${hovered ? 'hovered' : ''} ${pulseEffect ? 'pulse' : ''}`}
-          title="Hidden Treasure"
-          type="button"
-        >
-          {children || buttonText}
-        </button>
-      );
-      break;
-    case 'hidden':
-      content = (
-        <span 
-          className={`hidden-link-invisible ${clicked ? 'clicked' : ''} ${hovered ? 'hovered' : ''} ${pulseEffect ? 'pulse' : ''}`}
-          title="Hidden Treasure"
-        >
-          {children || '•'}
-        </span>
-      );
-      break;
-    case 'text':
-    default:
-      content = (
-        <span 
-          className={`hidden-link-text ${clicked ? 'clicked' : ''} ${hovered ? 'hovered' : ''} ${pulseEffect ? 'pulse' : ''}`}
-          title="Hidden Treasure"
-        >
-          {children || 'Discover More'}
-        </span>
-      );
+  // Render the appropriate variant
+  if (variant === 'button') {
+    return (
+      <button 
+        className={linkClass}
+        onClick={handleClick}
+      >
+        {buttonText || children}
+      </button>
+    );
   }
   
-  // MEDIUM DIFFICULTY: Add a hint for real links
-  const isRealLink = linkData.isReal;
-  const destination = linkData.destination || '#';
-  
+  // Default is text link
   return (
-    <a
-      href={destination}
+    <a 
+      href={href}
+      className={linkClass}
       onClick={handleClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={() => setHovered(true)}
-      onBlur={() => setHovered(false)}
-      className={`hidden-link ${className} ${isRealLink ? 'real-link' : 'decoy-link'} ${hovered ? 'hovered' : ''} ${pulseEffect ? 'pulse' : ''}`}
-      style={{
-        ...style,
-        position: 'relative',
-        textDecoration: 'none',
-        color: 'inherit',
-        cursor: 'pointer', // Always show pointer cursor for better clickability
-        userSelect: 'none', // Prevent text selection for better UX
-        WebkitTapHighlightColor: 'transparent', // Remove tap highlight on mobile
-      }}
-      data-link-id={linkData.linkId}
-      data-is-real={isRealLink.toString()}
-      aria-label="Hidden treasure hunt link"
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        // Add keyboard accessibility
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick(e);
-        }
-      }}
     >
-      {content}
-      
-      {/* Visual indicator that appears on hover */}
-      <span 
-        className="link-indicator"
-        style={{
-          opacity: hovered ? 1 : 0,
-          position: 'absolute',
-          bottom: '-3px',
-          left: '0',
-          width: '100%',
-          height: '2px',
-          backgroundColor: '#1eb2a6',
-          transition: 'opacity 0.3s ease',
-          pointerEvents: 'none', // Ensure it doesn't interfere with clicks
-        }}
-        aria-hidden="true"
-      />
-      
-      {/* Tooltip that appears on hover */}
-      <span 
-        className="link-tooltip"
-        style={{
-          opacity: hovered ? 1 : 0,
-          visibility: hovered ? 'visible' : 'hidden',
-          position: 'absolute',
-          bottom: 'calc(100% + 10px)',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '5px 10px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          whiteSpace: 'nowrap',
-          zIndex: 1000,
-          transition: 'opacity 0.3s ease, visibility 0.3s ease',
-          pointerEvents: 'none', // Ensure it doesn't interfere with clicks
-        }}
-        aria-hidden="true"
-      >
-        Click to explore
-      </span>
+      {children}
     </a>
   );
 };

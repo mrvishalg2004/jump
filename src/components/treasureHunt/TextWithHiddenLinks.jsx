@@ -1,6 +1,5 @@
 import React from 'react';
-import HiddenLink from './HiddenLink';
-import { getPageLinks } from '../../utils/linkHider';
+import { generateHash } from '../../utils/linkHider';
 
 /**
  * TextWithHiddenLinks Component
@@ -13,160 +12,86 @@ import { getPageLinks } from '../../utils/linkHider';
 const TextWithHiddenLinks = ({ 
   text, 
   playerId, 
-  page,
+  page = 'default', 
   linkWords = [], 
-  decoyWords = []
+  decoyWords = [], 
+  onWrongClick = () => {}, 
+  onCorrectClick = () => {} 
 }) => {
-  if (!text || !playerId) {
-    return <p>{text}</p>;
-  }
-
-  // Get all possible links for this page
-  const pageLinks = getPageLinks(page, playerId);
+  if (!text) return <p>Content loading...</p>;
   
-  // If no links are available, just return the text
-  if (!pageLinks || pageLinks.length === 0) {
-    return <p>{text}</p>;
-  }
-
-  // Filter to only visible links
-  const visibleLinks = pageLinks.filter(link => link.visible);
-  
-  // If no visible links, just return the text
-  if (visibleLinks.length === 0) {
-    return <p>{text}</p>;
-  }
-
-  // If no specific words are provided, use default approach
-  if (linkWords.length === 0 && decoyWords.length === 0) {
-    // Split text into words
+  try {
+    // Split the text into an array of words
     const words = text.split(' ');
     
-    // Determine which words will be links (real or decoy)
-    // For medium difficulty, make about 1 in 5 words a potential link
-    const linkedWords = words.map((word, index) => {
-      // Skip very short words and punctuation
-      if (word.length <= 2 || /^[.,!?;:()]+$/.test(word)) {
-        return { word, isLink: false };
-      }
-      
-      // Determine if this word should be a link (about 20% chance)
-      const shouldBeLink = (index + playerId.length) % 5 === 0;
-      
-      return { 
-        word, 
-        isLink: shouldBeLink
-      };
-    });
+    // Generate a hash for this particular player
+    const playerHash = generateHash(playerId || 'default-player');
     
-    // Assign real and decoy links to the words marked as links
-    let linkIndex = 0;
-    const processedWords = linkedWords.map(({ word, isLink }) => {
-      if (!isLink) {
-        return word;
-      }
-      
-      // Get the next link
-      const linkData = visibleLinks[linkIndex % visibleLinks.length];
-      linkIndex++;
-      
-      // Override the destination for real links to point to Round 2
-      const modifiedLinkData = {
-        ...linkData,
-        destination: linkData.isReal ? '/treasureHunt/round2' : linkData.destination
-      };
-      
-      return (
-        <HiddenLink
-          key={`link-${word}-${linkIndex}`}
-          linkData={modifiedLinkData}
-          playerId={playerId}
-          variant="text"
-        >
-          {word}
-        </HiddenLink>
-      );
-    });
+    // Determine which links to show based on player hash
+    // This ensures different players see links in different places
+    const shouldShowLink = (word) => {
+      return linkWords.includes(word);
+    };
     
-    // Join the words back together with spaces
+    const isDecoyLink = (word) => {
+      return decoyWords.includes(word);
+    };
+    
+    // Render the text with links and decoy links
     return (
-      <p className="text-with-hidden-links">
-        {processedWords.map((word, index) => (
-          React.isValidElement(word) 
-            ? word 
-            : <React.Fragment key={`word-${index}`}>{word}{' '}</React.Fragment>
-        ))}
+      <p className="text-with-links">
+        {words.map((word, index) => {
+          // Check if this word should be a real link
+          if (shouldShowLink(word)) {
+            // Real link that leads to the treasure hunt
+            return (
+              <span key={`word-${index}`}>
+                <a
+                  href={`#real-link-${page}-${index}`}
+                  className="real-link"
+                  onClick={onCorrectClick}
+                >
+                  {word}
+                </a>
+                {index < words.length - 1 ? ' ' : ''}
+              </span>
+            );
+          }
+          
+          // Check if this word should be a decoy link
+          if (isDecoyLink(word)) {
+            // Decoy link that doesn't lead anywhere
+            return (
+              <span key={`word-${index}`}>
+                <a
+                  href={`#decoy-link-${page}-${index}`}
+                  className="decoy-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onWrongClick();
+                  }}
+                >
+                  {word}
+                </a>
+                {index < words.length - 1 ? ' ' : ''}
+              </span>
+            );
+          }
+          
+          // Regular word, not a link
+          return (
+            <span key={`word-${index}`}>
+              {word}
+              {index < words.length - 1 ? ' ' : ''}
+            </span>
+          );
+        })}
       </p>
     );
+  } catch (error) {
+    console.error('Error rendering TextWithHiddenLinks:', error);
+    return <p>{text}</p>; // Fallback to plain text if there's an error
   }
-  
-  // If specific words are provided, use those
-  // Split text into words
-  const words = text.split(' ');
-  
-  // Process each word
-  const processedWords = words.map((word, index) => {
-    // Check if this word is in the linkWords list
-    const cleanWord = word.replace(/[.,!?;:()]+/g, '').toLowerCase();
-    
-    // Check if this word should be a real link
-    if (linkWords.some(linkWord => linkWord.toLowerCase() === cleanWord)) {
-      // Find a real link
-      const realLink = visibleLinks.find(link => link.isReal);
-      
-      if (realLink) {
-        // Create a modified link data with Round 2 destination
-        const modifiedLinkData = {
-          ...realLink,
-          destination: '/treasureHunt/round2'
-        };
-        
-        return (
-          <HiddenLink
-            key={`real-link-${index}`}
-            linkData={modifiedLinkData}
-            playerId={playerId}
-            variant="text"
-          >
-            {word}
-          </HiddenLink>
-        );
-      }
-    }
-    
-    // Check if this word should be a decoy link
-    if (decoyWords.some(decoyWord => decoyWord.toLowerCase() === cleanWord)) {
-      // Find a decoy link
-      const decoyLink = visibleLinks.find(link => !link.isReal);
-      
-      if (decoyLink) {
-        return (
-          <HiddenLink
-            key={`decoy-link-${index}`}
-            linkData={decoyLink}
-            playerId={playerId}
-            variant="text"
-          >
-            {word}
-          </HiddenLink>
-        );
-      }
-    }
-    
-    // Regular word
-    return word;
-  });
-  
-  // Join the words back together with spaces
-  return (
-    <p className="text-with-hidden-links">
-      {processedWords.map((word, index) => (
-        React.isValidElement(word) 
-          ? word 
-          : <React.Fragment key={`word-${index}`}>{word}{' '}</React.Fragment>
-      ))}
-    </p>
-  );
 };
 
 export default TextWithHiddenLinks; 

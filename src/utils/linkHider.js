@@ -8,152 +8,124 @@
  * DIFFICULTY: MEDIUM - More links are visible and the real link has subtle hints
  */
 
-// Generate a hash from a string (player ID)
-const generateHash = (str) => {
+import axios from 'axios';
+import { getApiEndpoint } from './apiConfig';
+
+/**
+ * Generates a consistent hash based on a player ID
+ * Used to ensure the same player always sees the same links
+ */
+export const generateHash = (playerId) => {
+  // Simple hashing function
   let hash = 0;
-  if (str.length === 0) return hash;
+  if (!playerId || playerId.length === 0) return hash;
   
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
+  for (let i = 0; i < playerId.length; i++) {
+    const char = playerId.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash; // Convert to 32bit integer
   }
+  
   return Math.abs(hash);
 };
 
-// Get a list of potential link locations
-const getLinkLocations = () => [
-  { page: 'about', section: 'header', position: 'right' },
-  { page: 'about', section: 'mission', position: 'bottom' },
-  { page: 'about', section: 'team', position: 'middle' },
-  { page: 'about', section: 'footer', position: 'left' },
-  { page: 'contact', section: 'header', position: 'top' },
-  { page: 'contact', section: 'form', position: 'right' },
-  { page: 'contact', section: 'map', position: 'bottom' },
-  { page: 'contact', section: 'footer', position: 'middle' },
-  { page: 'courses', section: 'header', position: 'left' },
-  { page: 'courses', section: 'list', position: 'top' },
-  { page: 'courses', section: 'details', position: 'right' },
-  { page: 'courses', section: 'footer', position: 'bottom' },
-  { page: 'pricing', section: 'header', position: 'middle' },
-  { page: 'pricing', section: 'plans', position: 'left' },
-  { page: 'pricing', section: 'faq', position: 'top' },
-  { page: 'pricing', section: 'footer', position: 'right' },
-  { page: 'journal', section: 'header', position: 'bottom' },
-  { page: 'journal', section: 'articles', position: 'middle' },
-  { page: 'journal', section: 'sidebar', position: 'left' },
-  { page: 'journal', section: 'footer', position: 'top' },
-];
-
-// Get decoy link destinations
-const getDecoyDestinations = () => [
-  '/decoy/page1',
-  '/decoy/page2',
-  '/decoy/page3',
-  '/decoy/page4',
-  '/decoy/page5',
-  '/decoy/clue1',
-  '/decoy/clue2',
-  '/decoy/clue3',
-  '/decoy/hint1',
-  '/decoy/hint2',
-];
-
-// Determine if a link should be visible based on player ID and location
-// MEDIUM DIFFICULTY: Show more links (1 in 3 instead of 1 in 7)
-const shouldShowLink = (playerId, location, allLocations) => {
-  if (!playerId) return false;
-  
-  const hash = generateHash(playerId);
-  const locationIndex = allLocations.findIndex(
-    loc => loc.page === location.page && 
-           loc.section === location.section && 
-           loc.position === location.position
-  );
-  
-  if (locationIndex === -1) return false;
-  
-  // MEDIUM DIFFICULTY: Show approximately 1/3 of all links (was 1/7)
-  return (hash + locationIndex) % 3 === 0;
-};
-
-// Determine if a link is a real link to Round 2 or a decoy
-const isRealLink = (playerId, location, allLocations) => {
-  if (!playerId) return false;
-  
-  const hash = generateHash(playerId);
-  const locationIndex = allLocations.findIndex(
-    loc => loc.page === location.page && 
-           loc.section === location.section && 
-           loc.position === location.position
-  );
-  
-  if (locationIndex === -1) return false;
-  
-  // Only one location will be the real link
-  // MEDIUM DIFFICULTY: Keep the same algorithm for determining the real link
-  return (hash + locationIndex) % allLocations.length === hash % allLocations.length;
-};
-
-// Get a link destination (real or decoy)
-const getLinkDestination = (playerId, location, allLocations, decoyDestinations) => {
-  if (isRealLink(playerId, location, allLocations)) {
-    return '/treasureHunt/round2';
-  } else {
-    const hash = generateHash(playerId);
-    const decoyIndex = (hash + allLocations.findIndex(
-      loc => loc.page === location.page && 
-             loc.section === location.section && 
-             loc.position === location.position
-    )) % decoyDestinations.length;
-    
-    return decoyDestinations[decoyIndex];
-  }
-};
-
-// Get a unique link ID for tracking clicks
-const getLinkId = (playerId, location) => {
-  return `link-${playerId}-${location.page}-${location.section}-${location.position}`;
-};
-
-// Get all link locations for a specific page
-const getPageLinks = (page, playerId) => {
-  const allLocations = getLinkLocations();
-  const decoyDestinations = getDecoyDestinations();
-  
-  return allLocations
-    .filter(location => location.page === page)
-    .map(location => ({
-      location,
-      visible: shouldShowLink(playerId, location, allLocations),
-      destination: getLinkDestination(playerId, location, allLocations, decoyDestinations),
-      isReal: isRealLink(playerId, location, allLocations),
-      linkId: getLinkId(playerId, location)
-    }));
-};
-
-// Track a link click (for admin analytics)
-const trackLinkClick = async (linkId, playerId) => {
+/**
+ * Tracks a link click in the backend
+ */
+export const trackLinkClick = async (linkId, playerId, isCorrect = false) => {
   try {
-    const apiPort = localStorage.getItem('apiPort') || '5000';
-    const response = await fetch(`http://localhost:${apiPort}/api/players/track-link-click`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ linkId, playerId }),
+    const endpoint = getApiEndpoint('/api/players/track-link-click');
+    
+    const response = await axios.post(endpoint, {
+      linkId,
+      playerId,
+      isCorrect
     });
-    return await response.json();
+    
+    return response.data;
   } catch (error) {
     console.error('Error tracking link click:', error);
     return { success: false, error: error.message };
   }
 };
 
-export {
-  getPageLinks,
-  trackLinkClick,
-  generateHash,
-  getLinkLocations,
-  getDecoyDestinations
+/**
+ * Gets page-specific links based on the player ID
+ */
+export const getPageLinks = (page, playerId) => {
+  // Generate a hash based on player ID for consistent link positions
+  const hash = generateHash(playerId);
+  
+  // Default links
+  const links = [
+    {
+      linkId: `${page}-real-1`,
+      isReal: true,
+      visible: true,
+      destination: '/round2'
+    },
+    {
+      linkId: `${page}-decoy-1`,
+      isReal: false,
+      visible: true,
+      destination: '/decoy/page1'
+    },
+    {
+      linkId: `${page}-decoy-2`,
+      isReal: false,
+      visible: true,
+      destination: '/decoy/page2'
+    }
+  ];
+  
+  return links;
+};
+
+/**
+ * Gets link locations for text content
+ */
+export const getLinkLocations = (text, playerId) => {
+  // Generate a hash from the player ID
+  const hash = generateHash(playerId);
+  
+  // Split text into words
+  const words = text.split(' ');
+  
+  // Determine which words will be potential link locations
+  // Use the hash to create a consistent but seemingly random pattern
+  const linkLocations = words.map((word, index) => {
+    // Skip short words and punctuation
+    if (word.length <= 2 || /^[.,!?;:()]+$/.test(word)) {
+      return { word, isLink: false, index };
+    }
+    
+    // Use the hash and word position to determine if it's a link
+    const shouldBeLink = ((hash + index) % 7 === 0);
+    
+    return {
+      word,
+      isLink: shouldBeLink,
+      index,
+      isRealLink: ((hash + index) % 19 === 0) // Rare condition for real link
+    };
+  });
+  
+  return linkLocations;
+};
+
+/**
+ * Gets an array of decoy destinations
+ */
+export const getDecoyDestinations = () => {
+  return [
+    '/decoy/page1',
+    '/decoy/page2',
+    '/decoy/page3',
+    '/decoy/page4',
+    '/decoy/page5',
+    '/decoy/clue1',
+    '/decoy/clue2',
+    '/decoy/hint1',
+    '/decoy/hint2',
+  ];
 }; 
