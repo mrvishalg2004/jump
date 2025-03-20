@@ -26,19 +26,25 @@ const server = http.createServer(app);
 const corsOptions = {
   origin: process.env.VERCEL_ENV ? '*' : 'http://localhost:3000',
   methods: ['GET', 'POST'],
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // Configure Socket.io with CORS
 const io = socketIo(server, {
   cors: {
-    origin: "*", // Allow all origins
+    origin: "*", // Allow all origins in production
     methods: ["GET", "POST"],
     credentials: true,
-    transports: ['websocket', 'polling']
+    transports: ['websocket', 'polling'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   },
   path: '/socket.io',
-  allowEIO3: true // Allow Engine.IO v3 compatibility for older clients
+  allowEIO3: true, // Allow Engine.IO v3 compatibility for older clients
+  pingTimeout: 60000, // Increase ping timeout
+  pingInterval: 25000, // Increase ping interval
+  connectTimeout: 45000, // Increase connection timeout
+  maxHttpBufferSize: 1e8 // Increase buffer size for large payloads
 });
 
 // Make io available globally
@@ -185,11 +191,12 @@ app.get('/', (req, res) => {
   res.status(200).send('Treasure Hunt API is running!');
 });
 
-// Special route for checking if socket.io is available
+// Add health check endpoint for socket.io
 app.get('/socket-check', (req, res) => {
   res.status(200).json({ 
     socketAvailable: true,
-    message: 'Socket.IO server is running'
+    message: 'Socket.IO server is running',
+    timestamp: new Date().toISOString()
   });
 });
 

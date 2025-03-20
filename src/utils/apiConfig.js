@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
       
       // For same-domain deployments, ensure we're using an absolute URL with https
       // This ensures socket connections work properly in production
-      return window.location.origin;
+      return `https://${hostname}`;
     }
     
     // For self-hosted deployments where frontend and backend are on same domain
@@ -45,6 +45,12 @@ const getSocketUrl = () => {
     
     // Always use the full origin for socket connections in production
     // This ensures proper websocket connections
+    const hostname = window.location.hostname;
+    if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
+      console.log('Using secure WebSocket URL for production:', `wss://${hostname}`);
+      return `wss://${hostname}`;
+    }
+    
     console.log('Using current origin for socket in production:', window.location.origin);
     return window.location.origin;
   }

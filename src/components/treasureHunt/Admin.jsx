@@ -123,7 +123,9 @@ const Admin = () => {
       timeout: 10000,
       path: '/socket.io',
       transports: ['websocket', 'polling'],
-      upgrade: true
+      upgrade: true,
+      forceNew: true,
+      autoConnect: true
     });
     
     setSocket(newSocket);
@@ -134,12 +136,16 @@ const Admin = () => {
         const apiUrl = getApiBaseUrl();
         console.log('Checking socket endpoint at:', `${apiUrl}/socket-check`);
         const response = await axios.get(`${apiUrl}/socket-check`, {
-          timeout: 5000
+          timeout: 5000,
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
         });
         console.log('Socket check endpoint response:', response.data);
         
         if (response.data && response.data.socketAvailable) {
           console.log('Socket server confirmed available via REST endpoint');
+          setConnectionError(null);
         }
       } catch (error) {
         console.error('Failed to check socket endpoint:', error);
@@ -167,6 +173,14 @@ const Admin = () => {
       console.error('Socket connection error:', err);
       setSocketConnected(false);
       setConnectionError(`Connection error: ${err.message}`);
+      
+      // Attempt to reconnect after a delay
+      setTimeout(() => {
+        if (!newSocket.connected) {
+          console.log('Attempting to reconnect socket...');
+          newSocket.connect();
+        }
+      }, 5000);
     });
     
     newSocket.on('connect_timeout', () => {
@@ -246,7 +260,9 @@ const Admin = () => {
     });
 
     return () => {
-      newSocket.disconnect();
+      if (newSocket) {
+        newSocket.disconnect();
+      }
     };
   }, [authenticated, fetchPlayers]);
 
