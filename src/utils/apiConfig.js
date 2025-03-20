@@ -11,14 +11,15 @@ const getApiBaseUrl = () => {
     const hostname = window.location.hostname;
     if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
       console.log('Detected deployment on Vercel/Netlify');
-      // If you have a separately deployed backend API, use its URL here
-      // Currently using a relative path, which assumes backend is deployed alongside frontend
-      return '';
+      
+      // For same-domain deployments, ensure we're using an absolute URL with https
+      // This ensures socket connections work properly in production
+      return window.location.origin;
     }
     
     // For self-hosted deployments where frontend and backend are on same domain
-    console.log('Using relative API path in production');
-    return '';
+    console.log('Using current origin as API path in production');
+    return window.location.origin;
   }
   
   // For development, try to get the port from localStorage
@@ -42,8 +43,9 @@ const getSocketUrl = () => {
       return process.env.REACT_APP_SOCKET_URL;
     }
     
-    // Default to the current origin (assumes socket server is on same host)
-    console.log('Using current origin for socket in production');
+    // Always use the full origin for socket connections in production
+    // This ensures proper websocket connections
+    console.log('Using current origin for socket in production:', window.location.origin);
     return window.location.origin;
   }
   

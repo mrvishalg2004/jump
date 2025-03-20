@@ -27,7 +27,14 @@ const corsOptions = {
 
 // Configure Socket.io with CORS
 const io = socketIo(server, {
-  cors: corsOptions
+  cors: {
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST"],
+    credentials: true,
+    transports: ['websocket', 'polling']
+  },
+  path: '/socket.io',
+  allowEIO3: true // Allow Engine.IO v3 compatibility for older clients
 });
 
 // Make io available globally

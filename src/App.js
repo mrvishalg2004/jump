@@ -25,23 +25,24 @@ function App() {
   const [isBackendReady, setIsBackendReady] = useState(false);
   const [backendPort, setBackendPort] = useState(null);
   
-  // Check for the backend port when the app starts
+  // Run port checker early in the application lifecycle
+  // This helps ensure the correct backend port is detected before components need it
   useEffect(() => {
-    const findBackendPort = async () => {
+    const initializeApi = async () => {
       try {
-        console.log('Checking for backend server...');
-        const port = await checkBackendPort();
-        setBackendPort(port);
-        setIsBackendReady(true);
-        console.log(`Backend server found on port ${port}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Running in development mode, checking backend port...');
+          const detectedPort = await checkBackendPort();
+          console.log(`Backend port detected: ${detectedPort}`);
+        } else {
+          console.log('Running in production mode, using relative API paths');
+        }
       } catch (error) {
-        console.error('Error checking backend port:', error);
-        // Still set ready to true so the app can load, even if backend is not available
-        setIsBackendReady(true);
+        console.error('Error initializing API configuration:', error);
       }
     };
     
-    findBackendPort();
+    initializeApi();
   }, []);
   
   // Show loading screen while checking for backend

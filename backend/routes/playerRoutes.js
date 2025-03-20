@@ -1125,4 +1125,24 @@ router.get('/admin/credentials', (req, res) => {
   }
 });
 
+// Listen for socket.io connections
+if (global.io) {
+  global.io.on('connection', (socket) => {
+    console.log('New client connected');
+    
+    // Handle admin room joining
+    socket.on('joinAdminRoom', (data) => {
+      console.log('Admin joined', data?.adminId ? `with ID: ${data.adminId}` : '');
+      socket.join('admin-room');
+    });
+    
+    // Handle disconnect
+    socket.on('disconnect', () => {
+      console.log('Client disconnected');
+    });
+    
+    //... existing socket handlers ...
+  });
+}
+
 module.exports = router; 

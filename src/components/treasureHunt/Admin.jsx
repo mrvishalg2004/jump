@@ -27,6 +27,8 @@ const Admin = () => {
   const [playerRealLink, setPlayerRealLink] = useState(null);
   const [originalLinkPosition, setOriginalLinkPosition] = useState(null);
   const [qualifiedPlayers, setQualifiedPlayers] = useState([]);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState(null);
 
   // Define fetchPlayers before any useEffect hooks that use it
   const fetchPlayers = useCallback(async () => {
@@ -110,78 +112,119 @@ const Admin = () => {
 
   // Connect to socket.io server
   useEffect(() => {
-    if (authenticated) {
-      const socketUrl = getSocketUrl();
-      console.log('Admin connecting to socket at:', socketUrl);
-      
-      const newSocket = io(socketUrl, {
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        path: '/socket.io'
-      });
-      
-      setSocket(newSocket);
+    // Set up socket connection
+    const socketUrl = getSocketUrl();
+    console.log('Admin connecting to socket server at:', socketUrl);
+    
+    const newSocket = io(socketUrl, {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      path: '/socket.io',
+      transports: ['websocket', 'polling'] // Explicitly specify transports
+    });
+    
+    setSocket(newSocket);
+    
+    // Log socket connection events
+    newSocket.on('connect', () => {
+      console.log('Admin socket connected successfully');
+      setSocketConnected(true);
+      setConnectionError(null);
       
       // Join admin room
-      newSocket.emit('joinAdminRoom');
+      newSocket.emit('joinAdminRoom', { adminId: 'admin-dashboard' });
+      console.log('Joined admin room');
       
-      // Listen for player updates
-      newSocket.on('playerUpdate', (data) => {
-        console.log('Received player update:', data);
+      // Request initial player data
+      newSocket.emit('getPlayerData');
+    });
+    
+    newSocket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+      setSocketConnected(false);
+      setConnectionError(`Connection error: ${err.message}`);
+    });
+    
+    newSocket.on('connect_timeout', () => {
+      console.error('Socket connection timeout');
+      setSocketConnected(false);
+      setConnectionError('Connection timed out');
+    });
+    
+    newSocket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+      setSocketConnected(false);
+      if (reason === 'io server disconnect') {
+        // The server has forcefully disconnected the connection
+        setConnectionError('Disconnected by server. Please refresh the page.');
+      } else {
+        setConnectionError('Connection lost. Attempting to reconnect...');
+        // The socket will automatically try to reconnect
+      }
+    });
+    
+    newSocket.on('reconnect', (attemptNumber) => {
+      console.log(`Socket reconnected after ${attemptNumber} attempts`);
+      setSocketConnected(true);
+      setConnectionError(null);
+      
+      // Re-join admin room after reconnection
+      newSocket.emit('joinAdminRoom', { adminId: 'admin-dashboard' });
+      
+      // Request fresh player data
+      newSocket.emit('getPlayerData');
+    });
+    
+    // Listen for player updates
+    newSocket.on('playerUpdate', (data) => {
+      console.log('Received player update:', data);
+      
+      if (data.type === 'qualification') {
+        // Handle qualification update specifically to update UI immediately
+        const updatedPlayer = data.player;
         
-        if (data.type === 'qualification') {
-          // Handle qualification update specifically to update UI immediately
-          const updatedPlayer = data.player;
-          
-          // Update the qualified players list without waiting for fetchPlayers
-          setQualifiedPlayers(prevQualified => {
-            // Check if player is already in the list
-            const existingIndex = prevQualified.findIndex(p => p.playerId === updatedPlayer.playerId);
-            if (existingIndex >= 0) {
-              // Update existing player
-              const updatedList = [...prevQualified];
-              updatedList[existingIndex] = { ...updatedList[existingIndex], ...updatedPlayer };
-              return updatedList;
-            } else {
-              // Add new qualified player
-              return [...prevQualified, updatedPlayer];
+        // Update the qualified players list without waiting for fetchPlayers
+        setQualifiedPlayers(prevQualified => {
+          // Check if player is already in the list
+          const existingIndex = prevQualified.findIndex(p => p.playerId === updatedPlayer.playerId);
+          if (existingIndex >= 0) {
+            // Update existing player
+            const updatedList = [...prevQualified];
+            updatedList[existingIndex] = { ...updatedList[existingIndex], ...updatedPlayer };
+            return updatedList;
+          } else {
+            // Add new qualified player
+            return [...prevQualified, updatedPlayer];
+          }
+        });
+        
+        // Also update in the main players list
+        setPlayers(prevPlayers => {
+          return prevPlayers.map(p => {
+            if (p.playerId === updatedPlayer.playerId) {
+              return { ...p, ...updatedPlayer };
             }
+            return p;
           });
-          
-          // Also update in the main players list
-          setPlayers(prevPlayers => {
-            return prevPlayers.map(p => {
-              if (p.playerId === updatedPlayer.playerId) {
-                return { ...p, ...updatedPlayer };
-              }
-              return p;
-            });
-          });
-        }
-        
-        // Fetch all players to ensure data consistency
-        fetchPlayers();
-      });
-
-      // Listen for game state updates
-      newSocket.on('gameStateUpdate', (data) => {
-        setGameSettings(prevSettings => ({
-          ...prevSettings,
-          activeRound: data.activeRound
-        }));
-      });
-
-      // Handle connection errors
-      newSocket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
-        setError('Failed to connect to game server. Please check your connection.');
-      });
+        });
+      }
       
-      return () => {
-        newSocket.disconnect();
-      };
-    }
+      // Fetch all players to ensure data consistency
+      fetchPlayers();
+    });
+
+    // Listen for game state updates
+    newSocket.on('gameStateUpdate', (data) => {
+      setGameSettings(prevSettings => ({
+        ...prevSettings,
+        activeRound: data.activeRound
+      }));
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
   }, [authenticated, fetchPlayers]);
 
   // Listen for socket events to update player list in real-time
@@ -880,6 +923,45 @@ const Admin = () => {
       <div className="container">
         <div className="admin-content">
           <h1>Admin Dashboard</h1>
+          
+          {/* Connection Status Indicator */}
+          <div className="connection-status" style={{
+            padding: '10px',
+            margin: '10px 0',
+            borderRadius: '5px',
+            backgroundColor: socketConnected ? '#d4edda' : '#f8d7da',
+            color: socketConnected ? '#155724' : '#721c24',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span>
+              <strong>Server Connection:</strong> {socketConnected ? 'Connected' : 'Disconnected'}
+              {connectionError && <span style={{ marginLeft: '10px' }}>{connectionError}</span>}
+            </span>
+            {!socketConnected && (
+              <button 
+                onClick={() => {
+                  // Attempt to reconnect manually
+                  if (socket) {
+                    socket.connect();
+                  } else {
+                    window.location.reload();
+                  }
+                }}
+                style={{
+                  padding: '5px 10px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '3px',
+                  cursor: 'pointer'
+                }}
+              >
+                Reconnect
+              </button>
+            )}
+          </div>
           
           {error && <div className="error-message">{error}</div>}
           
