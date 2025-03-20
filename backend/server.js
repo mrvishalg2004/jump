@@ -55,6 +55,48 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Add health check endpoint for socket.io - AT THE TOP
+app.get('/socket-check', (req, res) => {
+  try {
+    res.status(200).json({ 
+      socketAvailable: true,
+      message: 'Socket.IO server is running',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      vercelEnv: process.env.VERCEL_ENV || 'development'
+    });
+  } catch (error) {
+    console.error('Error in socket-check endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error checking socket status',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Add a more robust health check endpoint - AT THE TOP
+app.get('/health', (req, res) => {
+  try {
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      vercelEnv: process.env.VERCEL_ENV || 'development',
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      socket: io.engine.clientsCount > 0 ? 'active' : 'inactive'
+    };
+    res.status(200).json(health);
+  } catch (error) {
+    console.error('Error in health check:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Health check failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Serve the current-port.txt file from the root
 app.get('/current-port.txt', (req, res) => {
   try {
@@ -228,48 +270,6 @@ io.on('connection', (socket) => {
 // Special route for Vercel deployment health check
 app.get('/', (req, res) => {
   res.status(200).send('Treasure Hunt API is running!');
-});
-
-// Add health check endpoint for socket.io - MOVED UP to ensure it's reachable
-app.get('/socket-check', (req, res) => {
-  try {
-    res.status(200).json({ 
-      socketAvailable: true,
-      message: 'Socket.IO server is running',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      vercelEnv: process.env.VERCEL_ENV || 'development'
-    });
-  } catch (error) {
-    console.error('Error in socket-check endpoint:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error checking socket status',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-});
-
-// Add a more robust health check endpoint - MOVED UP to ensure it's reachable
-app.get('/health', (req, res) => {
-  try {
-    const health = {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      vercelEnv: process.env.VERCEL_ENV || 'development',
-      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      socket: io.engine.clientsCount > 0 ? 'active' : 'inactive'
-    };
-    res.status(200).json(health);
-  } catch (error) {
-    console.error('Error in health check:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Health check failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
 });
 
 // Add error handling middleware

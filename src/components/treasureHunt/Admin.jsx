@@ -37,8 +37,16 @@ const Admin = () => {
       
       console.log(`Fetching players from: ${API_BASE_URL}/api/players/admin/players`);
       
+      // Set up authentication header if available
+      const headers = {};
+      const adminToken = localStorage.getItem('adminToken');
+      if (adminToken) {
+        headers['Authorization'] = `Bearer ${adminToken}`;
+      }
+      
       const response = await axios.get(`${API_BASE_URL}/api/players/admin/players`, {
-        timeout: 8000 // Increase timeout for more reliable connection
+        timeout: 10000, // Increase timeout for more reliable connection
+        headers
       });
       
       if (response.data.success) {
@@ -73,14 +81,20 @@ const Admin = () => {
       if (error.code === 'ECONNABORTED') {
         setError('Request timed out. Please check your connection and try again.');
       } else if (!error.response) {
-        setError(`Network error. Please check that the backend server is running on port ${localStorage.getItem('apiPort') || '5000'}.`);
+        setError(`Network error. Please check that the backend server is running.`);
+      } else if (error.response.status === 403) {
+        // Handle authentication issues
+        setError('Authentication failed. Please log in again.');
+        setAuthenticated(false);
+        localStorage.removeItem('adminAuthenticated');
+        localStorage.removeItem('adminToken');
       } else {
         setError('Failed to fetch players data: ' + (error.response?.data?.message || error.message));
       }
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL]);
+  }, []);
 
   // Check localStorage for authentication on component mount
   useEffect(() => {
@@ -354,20 +368,35 @@ const Admin = () => {
     }
   }, [socket, fetchPlayers]);
 
-  // Handle authentication
-  const handleAuthentication = (e) => {
+  // Handle login
+  const handleLogin = async (e) => {
     e.preventDefault();
-    
-    // Check admin credentials
-    if (password === 'vishalgolhar10@gmail.com#8421236102#7350168049' && 
-        email === 'vishalgolhar10@gmail.com') {
-      setAuthenticated(true);
-      // Store authentication state in localStorage
-      localStorage.setItem('adminAuthenticated', 'true');
-      fetchPlayers();
-      fetchOriginalLinkPosition();
-    } else {
-      setError('Invalid email or password');
+    try {
+      console.log('Attempting admin login');
+      const response = await axios.post(`${API_BASE_URL}/api/players/admin/login`, {
+        email,
+        password
+      });
+      
+      if (response.data.success) {
+        // Store authentication state
+        setAuthenticated(true);
+        localStorage.setItem('adminAuthenticated', 'true');
+        
+        // Store the token if provided
+        if (response.data.token) {
+          localStorage.setItem('adminToken', response.data.token);
+          console.log('Admin token saved');
+        }
+        
+        console.log('Admin login successful');
+        setError('');
+      } else {
+        setError('Login failed: ' + response.data.message);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Login failed: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -376,6 +405,7 @@ const Admin = () => {
     if (window.confirm('Are you sure you want to log out?')) {
       setAuthenticated(false);
       localStorage.removeItem('adminAuthenticated');
+      localStorage.removeItem('adminToken');
       if (socket) {
         socket.disconnect();
       }
@@ -859,7 +889,7 @@ const Admin = () => {
             
             {error && <div className="error-message">{error}</div>}
             
-            <form onSubmit={handleAuthentication} className="admin-login-form">
+            <form onSubmit={handleLogin} className="admin-login-form">
               <div className="form-group">
                 <label htmlFor="email">Email</label>
                 <input

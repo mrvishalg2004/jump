@@ -3,6 +3,48 @@ const router = express.Router();
 const Player = require('../models/Player');
 const GameSettings = require('../models/GameSettings');
 const LinkClick = require('../models/LinkClick');
+const jwt = require('jsonwebtoken');
+
+// Secret key for JWT - in production, use environment variable
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-for-development-only';
+
+// Admin authentication middleware
+const authenticateAdmin = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    // For development/testing without auth
+    if (process.env.SKIP_AUTH === 'true') {
+      console.log('Skipping authentication for development');
+      return next();
+    }
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Authorization header missing or invalid'
+      });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    
+    // Verify the token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Add user info to request
+    req.user = decoded;
+    
+    // Allow the request to proceed
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return res.status(403).json({
+      success: false,
+      message: 'Authentication failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
 // Register a new player
 router.post('/register', async (req, res) => {
@@ -305,7 +347,7 @@ router.post('/submit-link', async (req, res) => {
 });
 
 // Get all players (admin only)
-router.get('/admin/players', async (req, res) => {
+router.get('/admin/players', authenticateAdmin, async (req, res) => {
   try {
     console.log('Admin requested player data');
     
@@ -1121,6 +1163,45 @@ router.get('/admin/credentials', (req, res) => {
       success: false,
       message: 'Server error',
       error: error.message
+    });
+  }
+});
+
+// Admin login endpoint
+router.post('/admin/login', (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // In a real app, you would check against database credentials
+    // For this demo, using hardcoded credentials
+    if (email === 'vishalgolhar10@gmail.com' && 
+        password === 'vishalgolhar10@gmail.com#8421236102#7350168049') {
+      
+      // Create a JWT token
+      const token = jwt.sign({ 
+        email,
+        role: 'admin',
+        timestamp: Date.now()
+      }, JWT_SECRET, { expiresIn: '24h' });
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token
+      });
+    }
+    
+    // If credentials don't match
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid email or password'
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error during login',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
