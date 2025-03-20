@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Odyssey Education</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: center;
+    }
+    
+    header {
+      background-color: #1eb2a6;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    
+    .content-box {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    
+    h1 {
+      color: #1eb2a6;
+    }
+    
+    .btn {
+      display: inline-block;
+      background-color: #1eb2a6;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 4px;
+      margin-top: 1rem;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    
+    .btn:hover {
+      background-color: #179b8f;
+    }
+    
+    .error-info {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      text-align: left;
+    }
+    
+    code {
+      background-color: #eee;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI Odyssey Education</h1>
+  </header>
+  
+  <div class="container">
+    <div class="content-box">
+      <h1>Welcome to AI Odyssey</h1>
+      <p>If you're seeing this page, it means the main application couldn't load properly.</p>
+      <p>Don't worry - you can continue your AI Odyssey by clicking the button below.</p>
+      <button class="btn" onclick="window.location.href='/'">Go to Homepage</button>
+    </div>
+    
+    <div class="error-info">
+      <h3>Technical Information:</h3>
+      <p>The React application failed to load. This could be due to:</p>
+      <ul>
+        <li>Network connectivity issues</li>
+        <li>Browser compatibility problems</li>
+        <li>JavaScript errors in the application</li>
+      </ul>
+      <p>Try the following:</p>
+      <ol>
+        <li>Clear your browser cache and cookies</li>
+        <li>Try a different browser (Chrome, Firefox, or Edge)</li>
+        <li>Disable browser extensions that might be interfering</li>
+        <li>Check your internet connection</li>
+      </ol>
+      <p>If problems persist, please contact support with this error code: <code>VERCEL-REACT-LOAD-ERR</code></p>
+    </div>
+  </div>
+  
+  <script>
+    // This script will try to redirect to the homepage if appropriate
+    window.onload = function() {
+      // If we're at the root already, no need to redirect
+      if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+        document.querySelector('.content-box').innerHTML = `
+          <h1>Loading Error</h1>
+          <p>We're having trouble loading the main application.</p>
+          <p>Please try refreshing the page or using a different browser.</p>
+          <button class="btn" onclick="window.location.reload()">Refresh Page</button>
+        `;
+      }
+    };
+  </script>
+</body>
+</html> 

@@ -10,6 +10,9 @@
     { "src": "/socket-check", "dest": "/backend/server.js" },
     { "src": "/health", "dest": "/backend/server.js" },
     { "src": "/current-port.txt", "dest": "/backend/server.js" },
+    { "src": "/vercel-init.js", "dest": "/vercel-init.js" },
+    { "src": "/fallback-index.html", "dest": "/fallback-index.html" },
+    { "src": "/404.html", "dest": "/404.html" },
     { "src": "/(.*\\.(js|json|css|ico|png|jpg|jpeg|gif|svg|ttf|woff|woff2)$)", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
@@ -28,6 +31,12 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    },
+    {
+      "source": "/vercel-init.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
     },
     {

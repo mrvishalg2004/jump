@@ -403,4 +403,32 @@ function logError(context, error) {
 // Handle socket.io errors
 io.engine.on('connection_error', (err) => {
   logError('Socket.io connection error', err);
+});
+
+// Add diagnostic endpoint
+app.post('/api/diagnostic', (req, res) => {
+  console.log('[DIAGNOSTIC]', JSON.stringify(req.body));
+  res.status(200).json({ success: true });
+});
+
+// Add initialization log endpoint
+app.post('/api/init-log', (req, res) => {
+  console.log('[INIT LOG]', JSON.stringify(req.body));
+  res.status(200).json({ success: true });
+});
+
+// Add a health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    mongodb: isMongoConnected ? 'connected' : 'disconnected'
+  });
+});
+
+// Add a current port endpoint
+app.get('/current-port.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.status(200).send(`${PORT}`);
 }); 

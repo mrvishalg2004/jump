@@ -21,6 +21,7 @@ import { PlayerProvider } from "./context/PlayerContext"
 import DecoyPage from "./components/treasureHunt/DecoyPage"
 import React from 'react';
 import ErrorBoundary from './ErrorBoundary'
+import ReactDiagnostic from './ReactDiagnostic'
 
 function App() {
   const [isBackendReady, setIsBackendReady] = useState(false);
@@ -65,6 +66,8 @@ function App() {
     <ErrorBoundary>
       <PlayerProvider>
         <Router basename="/">
+          {/* Diagnostic component to help troubleshoot issues */}
+          <ReactDiagnostic />
           <Header />
           <Switch>
             <Route exact path='/' component={Home} />
